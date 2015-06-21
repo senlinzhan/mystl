@@ -459,6 +459,7 @@ public:
                           std::move( (other.head_)->next_ ), 
                           comp );
         head_->next_ = std::move( ptr );
+        other.head_->next_ = nullptr;
     }
 
     template <class Compare = std::less<value_type>>
@@ -468,6 +469,7 @@ public:
                           std::move( (other.head_)->next_ ), 
                           comp );
         head_->next_ = std::move( ptr );
+        other.head_->next_ = nullptr;
     }
 
 private:
