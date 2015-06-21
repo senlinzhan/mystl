@@ -8,6 +8,8 @@
 #include <functional>              // for std::less<>
 #include <initializer_list>        // for std::initializer_list<>
 
+namespace mystl {
+
 class forward_list_exception : public std::exception
 {
 public:
@@ -517,5 +519,7 @@ template <typename T>
 inline void swap( forward_list<T> &left, forward_list<T> &right ) noexcept {
     left.swap( right );
 }
+
+};
 
 #endif /* _FORWARD_LIST_H_ */
