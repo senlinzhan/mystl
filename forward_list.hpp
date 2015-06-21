@@ -7,6 +7,7 @@
 #include <iostream>                // for debug
 #include <functional>              // for std::less<>
 #include <initializer_list>        // for std::initializer_list<>
+#include "algorithm.hpp"
 
 namespace mystl {
 
@@ -513,10 +514,25 @@ private:
         
         return std::move( head_ptr->next_ );
     }
+
+public:
+    bool operator==( const forward_list<value_type> &other ) {
+        if( size_ != other.size_ ) {
+            return false;
+        }
+        if( head_ == other.head_ ) {
+            return true;
+        }
+        return mystl::equal( cbegin(), cend(), other.cbegin() );
+    }
+
+    bool operator!=( const forward_list<value_type> &other ) {
+        return !(*this == other);
+    }
 };
 
 template <typename T>
-inline void swap( forward_list<T> &left, forward_list<T> &right ) noexcept {
+inline void swap( mystl::forward_list<T> &left, mystl::forward_list<T> &right ) noexcept {
     left.swap( right );
 }
 
