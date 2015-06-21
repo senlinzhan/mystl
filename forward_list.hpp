@@ -451,29 +451,18 @@ public:
         }
     }
 
-    // merge two sorted forward_list
-    void merge( forward_list &other ) {
-        size_ += other.size();
-        auto ptr = merge( std::move( head_->next_ ), std::move( (other.head_)->next_ ) );
-        head_->next_ = std::move( ptr );
-    }
-    
-    void merge( forward_list &&other ) {
-        size_ += other.size();
-        auto ptr = merge( std::move( head_->next_ ), std::move( (other.head_)->next_ ) );
-        head_->next_ = std::move( ptr );        
-    }
-    
-    template <class Compare>
-    void merge( forward_list &other, Compare comp ) {
+    // merge two sorted forward_list    
+    template <class Compare = std::less<value_type>>
+    void merge( forward_list &other, Compare comp = Compare{} ) {
         size_ += other.size();
         auto ptr = merge( std::move( head_->next_ ), 
                           std::move( (other.head_)->next_ ), 
                           comp );
         head_->next_ = std::move( ptr );
     }
-    template <class Compare>
-    void merge( forward_list &&other, Compare comp ) {
+
+    template <class Compare = std::less<value_type>>
+    void merge( forward_list &&other, Compare comp = Compare{} ) {
         size_ += other.size();
         auto ptr = merge( std::move( head_->next_ ), 
                           std::move( (other.head_)->next_ ), 
@@ -493,10 +482,10 @@ private:
         ++size_;
         return front;
     }
-
-    template <typename Comp = std::less<value_type>>
+ 
+    template <typename Comp>
     std::unique_ptr<node> merge( std::unique_ptr<node> left, std::unique_ptr<node> right,
-                                 Comp comp = Comp{} ) {
+                                 Comp comp ) {
         node head_node;
         node *head_ptr = &head_node;
         node *current = head_ptr;
