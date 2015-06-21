@@ -2,9 +2,11 @@
 #define _FORWARD_LIST_H_
 
 #include "memory.hpp"
-#include <exception>
-#include <cstddef>
-#include <iostream>
+#include <exception>               // for std::exception
+#include <cstddef>                 // for std::size_t
+#include <iostream>                // for debug
+#include <functional>              // for std::less<>
+#include <initializer_list>        // for std::initializer_list<>
 
 class forward_list_exception : public std::exception
 {
@@ -218,8 +220,8 @@ public:
 
     template <class... Args>
     void emplace_front( Args&&... args ) {
-        T value( std::forward<Args>(args)... );
-        auto ptr = make_unique<node>( std::move( value ), std::move( head_->next_ ) );
+        auto ptr = make_unique<node>( value_type( std::forward<Args>(args)... ), 
+                                      std::move( head_->next_ ) );
         head_->next_ = std::move( ptr );
         ++size_;
     }
@@ -340,10 +342,143 @@ public:
 
         for( size_type i = 0; i < removeNum; ++i ) {
             ptr->next_ = std::move( ptr->next_->next_ );
-            --size_;
         }
+        size_ -= removeNum;
 
         return { (ptr->next_).get() };
+    }
+
+    iterator insert_after( const_iterator position, const value_type &value ) {
+        insert_after( position, 1, value );
+    }
+
+    iterator insert_after( const_iterator position, value_type &&value ) {
+        if( position == cend() ) {
+            throw forward_list_exception( "forward_list::insert_after(): the specity iterator is  a off-the-end iterator" );
+        }
+
+        node *ptr = position.current_;
+        ptr->next_ = make_unique<node>( std::move( value ), std::move( ptr->next_ ) );
+        ++size_;
+        return { (ptr->next_).get() };        
+    }
+    
+    iterator insert_after( const_iterator position, size_type n, const value_type &value ) {
+        if( position == cend() ) {
+            throw forward_list_exception( "forward_list::insert_after(): the specity iterator is  a off-the-end iterator" );
+        }
+
+        node *ptr = position.current_;
+        for( size_type i = 0; i < n; ++i ) {
+            ptr->next_ = make_unique<node>( value, std::move( ptr->next_ ) );
+            ptr = (ptr->next_).get();
+        }
+        size_ += n;
+        return { ptr };
+    }
+
+   template <class InputIterator>
+    iterator insert_after( const_iterator position, InputIterator first, InputIterator last ) {
+        if( position == cend() ) {
+            throw forward_list_exception( "forward_list::insert_after(): the specity iterator is  a off-the-end iterator" );
+        }
+        
+        node *ptr = position.current_;
+        for( auto iter = first; iter != last; ++iter ) {
+            ptr->next_ = make_unique<node>( *iter, std::move( ptr->next_ ) );
+            ptr = (ptr->next_).get();
+            ++size_;
+        }
+
+        return { ptr };        
+    }
+
+    iterator insert_after( const_iterator position, std::initializer_list<value_type> lst ) {
+        return insert_after( position, lst.begin(), lst.end() );
+    }
+
+    template <class... Args>
+    iterator emplace_after( const_iterator position, Args&&... args ) {
+        if( position == cend() ) {
+            throw forward_list_exception( "forward_list::emplace_after(): the specity iterator is  a off-the-end iterator" );
+        }
+
+        node *ptr = position.current_;
+        ptr->next_ = make_unique<node>( value_type( std::forward<Args>(args)... ),
+                                        std::move( ptr->next_ ) );
+        ++size_;
+        return { (ptr->next_).get() };        
+    }
+
+    void remove( const value_type &value ) {
+        if( empty() ) {
+            return;
+        }
+        
+        auto previous = cbefore_begin();
+        auto current = begin();
+        auto last = end();
+        
+        while( current != last ) {
+            if( *current == value ) {
+                current = erase_after( previous );
+                --size_;
+            } else {
+                ++previous;
+                ++current;
+            }
+        }
+    }
+
+    template <class Predicate>
+    void remove_if( Predicate pred ) {
+        if( empty() ) {
+            return;
+        }
+        
+        auto previous = cbefore_begin();
+        auto current = begin();
+        auto last = end();
+        
+        while( current != last ) {
+            if( pred( *current ) ) {
+                current = erase_after( previous );
+                --size_;
+            } else {
+                ++previous;
+                ++current;
+            }
+        }
+    }
+
+    // merge two sorted forward_list
+    void merge( forward_list &other ) {
+        size_ += other.size();
+        auto ptr = merge( std::move( head_->next_ ), std::move( (other.head_)->next_ ) );
+        head_->next_ = std::move( ptr );
+    }
+    
+    void merge( forward_list &&other ) {
+        size_ += other.size();
+        auto ptr = merge( std::move( head_->next_ ), std::move( (other.head_)->next_ ) );
+        head_->next_ = std::move( ptr );        
+    }
+    
+    template <class Compare>
+    void merge( forward_list &other, Compare comp ) {
+        size_ += other.size();
+        auto ptr = merge( std::move( head_->next_ ), 
+                          std::move( (other.head_)->next_ ), 
+                          comp );
+        head_->next_ = std::move( ptr );
+    }
+    template <class Compare>
+    void merge( forward_list &&other, Compare comp ) {
+        size_ += other.size();
+        auto ptr = merge( std::move( head_->next_ ), 
+                          std::move( (other.head_)->next_ ), 
+                          comp );
+        head_->next_ = std::move( ptr );
     }
 
 private:
@@ -358,8 +493,34 @@ private:
         ++size_;
         return front;
     }
-};
 
+    template <typename Comp = std::less<value_type>>
+    std::unique_ptr<node> merge( std::unique_ptr<node> left, std::unique_ptr<node> right,
+                                 Comp comp = Comp{} ) {
+        node head_node;
+        node *head_ptr = &head_node;
+        node *current = head_ptr;
+        while( left != nullptr && right != nullptr ) {
+            if( comp( left->value_, right->value_ ) ) {
+                current->next_ = std::move( left );
+                current = (current->next_).get();
+                left = std::move( current->next_ );
+            } else {
+                current->next_ = std::move( right );
+                current = (current->next_).get();
+                right = std::move( current->next_ );
+            }
+        }
+        
+        if( left != nullptr ) {
+            current->next_ = std::move( left );
+        } else {
+            current->next_ = std::move( right );            
+        }
+        
+        return std::move( head_ptr->next_ );
+    }
+};
 
 template <typename T>
 inline void swap( forward_list<T> &left, forward_list<T> &right ) noexcept {
