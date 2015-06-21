@@ -520,6 +520,6 @@ inline void swap( forward_list<T> &left, forward_list<T> &right ) noexcept {
     left.swap( right );
 }
 
-};
+};    // end of namespace mystl
 
 #endif /* _FORWARD_LIST_H_ */
