@@ -1,13 +1,13 @@
 #ifndef _FORWARD_LIST_H_
 #define _FORWARD_LIST_H_
 
-#include "memory.hpp"
+#include "algorithm.hpp"
+#include "memory.hpp"              
 #include <exception>               // for std::exception
 #include <cstddef>                 // for std::size_t
 #include <iostream>                // for debug
 #include <functional>              // for std::less<>
 #include <initializer_list>        // for std::initializer_list<>
-#include "algorithm.hpp"
 
 namespace mystl {
 
@@ -29,7 +29,8 @@ private:
 template <typename T>
 class forward_list
 {
-    friend void swap( forward_list<T> &, forward_list<T> & );
+    template <typename Type>
+    friend void swap( forward_list<Type> &, forward_list<Type> & ) noexcept;
 private:
     struct node;
     using node_ptr = std::unique_ptr<node>;
@@ -342,7 +343,6 @@ public:
         for( auto iter = ++position; iter != last; ++iter ) {
             ++removeNum;
         }
-
         for( size_type i = 0; i < removeNum; ++i ) {
             ptr->next_ = std::move( ptr->next_->next_ );
         }
@@ -352,14 +352,19 @@ public:
     }
 
     iterator insert_after( const_iterator position, const value_type &value ) {
-        insert_after( position, 1, value );
+        if( position == cend() ) {
+            throw forward_list_exception( "forward_list::insert_after(): the specity iterator is  a off-the-end iterator" );
+        }
+        node *ptr = position.current_;
+        ptr->next_ = make_unique<node>( value, std::move( ptr->next_ ) );
+        ++size_;
+        return { (ptr->next_).get() };
     }
 
     iterator insert_after( const_iterator position, value_type &&value ) {
         if( position == cend() ) {
             throw forward_list_exception( "forward_list::insert_after(): the specity iterator is  a off-the-end iterator" );
         }
-
         node *ptr = position.current_;
         ptr->next_ = make_unique<node>( std::move( value ), std::move( ptr->next_ ) );
         ++size_;
@@ -370,7 +375,6 @@ public:
         if( position == cend() ) {
             throw forward_list_exception( "forward_list::insert_after(): the specity iterator is  a off-the-end iterator" );
         }
-
         node *ptr = position.current_;
         for( size_type i = 0; i < n; ++i ) {
             ptr->next_ = make_unique<node>( value, std::move( ptr->next_ ) );
@@ -417,7 +421,6 @@ public:
         if( empty() ) {
             return;
         }
-        
         auto previous = cbefore_begin();
         auto current = begin();
         auto last = end();
@@ -438,7 +441,6 @@ public:
         if( empty() ) {
             return;
         }
-        
         auto previous = cbefore_begin();
         auto current = begin();
         auto last = end();
@@ -475,6 +477,70 @@ public:
         other.head_->next_ = nullptr;
     }
 
+    void reverse() noexcept {
+        if( size() < 2 ) {
+            return;
+        }
+        std::unique_ptr<node> previous;
+        auto current = std::move( head_->next_ );
+        while( current != nullptr ) {
+            auto next = std::move( current->next_ );
+            current->next_ = std::move( previous );
+            previous = std::move( current );
+            current = std::move( next );
+        }
+
+        head_->next_ = std::move( previous );
+    }
+
+    void resize( size_type n, const value_type &value = value_type() ) {
+        if( n == size_ ) {
+            return;
+        }
+
+        if( n < size_ ) {
+            auto iter = before_begin();
+            for( size_type i = 0; i < n; ++i ) {
+                ++iter;
+            }
+            (iter.current_)->next_ = nullptr;
+        } 
+
+        if( n > size_ ) {
+            auto iter = cbefore_begin();
+            for( size_type i = 0; i < size_; ++i ) {
+                ++iter;
+            }
+            insert_after( iter, n - size_, value );
+        }
+    }
+
+    void splice_after( const_iterator position, forward_list &fwdlst ) {
+        
+    }
+
+    void splice_after( const_iterator position, forward_list &&fwdlst ) {
+        
+    }
+    
+    void splice_after( const_iterator position, forward_list &fwdlst, const_iterator i ) {
+        
+    }
+
+    void splice_after( const_iterator position, forward_list &&fwdlst, const_iterator i ) {
+        
+    }
+    
+    void splice_after( const_iterator position, forward_list &fwdlst,
+                       const_iterator first, const_iterator last ) {
+        
+    }
+
+    void splice_after( const_iterator position, forward_list &&fwdlst,
+                       const_iterator first, const_iterator last ) {
+        
+    }
+
 private:
     template <typename InputIterator>
     std::unique_ptr<node> copy_forward_list( InputIterator first, InputIterator last ) {
@@ -488,6 +554,8 @@ private:
         return front;
     }
  
+    // left point to the first element in the first forward_list
+    // right point to the first element in the second forward_list
     template <typename Comp>
     std::unique_ptr<node> merge( std::unique_ptr<node> left, std::unique_ptr<node> right,
                                  Comp comp ) {
@@ -516,7 +584,7 @@ private:
     }
 
 public:
-    bool operator==( const forward_list<value_type> &other ) {
+    bool operator==( const forward_list<value_type> &other ) const {
         if( size_ != other.size_ ) {
             return false;
         }
@@ -526,7 +594,7 @@ public:
         return mystl::equal( cbegin(), cend(), other.cbegin() );
     }
 
-    bool operator!=( const forward_list<value_type> &other ) {
+    bool operator!=( const forward_list<value_type> &other ) const {
         return !(*this == other);
     }
 };
