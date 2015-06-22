@@ -2,7 +2,8 @@
 #define _FORWARD_LIST_H_
 
 #include "algorithm.hpp"
-#include "memory.hpp"              
+#include "memory.hpp"     
+#include "iterator.hpp"         
 #include <exception>               // for std::exception
 #include <cstddef>                 // for std::size_t
 #include <iostream>                // for debug
@@ -170,13 +171,13 @@ public:
             push_front( value );
         }
     }
-    
-    template <class InputIterator>
+
+    template <class InputIterator, typename = RequireInputIterator<InputIterator>>
     forward_list( InputIterator first, InputIterator last ) {
         auto new_list = copy_forward_list( first, last );
         head_->next_ = std::move( new_list );
     }
-    
+
     forward_list( const forward_list &other ) {
         auto new_list = copy_forward_list( other.begin(), other.end() );
         head_->next_ = std::move( new_list );
@@ -293,7 +294,7 @@ public:
         return { };
     }
     
-    template <class InputIterator>
+    template <typename InputIterator, typename = RequireInputIterator<InputIterator>>
     void assign( InputIterator first, InputIterator last ) {
         size_ = 0;
         auto new_list = copy_forward_list( first, last );
@@ -352,13 +353,7 @@ public:
     }
 
     iterator insert_after( const_iterator position, const value_type &value ) {
-        if( position == cend() ) {
-            throw forward_list_exception( "forward_list::insert_after(): the specity iterator is  a off-the-end iterator" );
-        }
-        node *ptr = position.current_;
-        ptr->next_ = make_unique<node>( value, std::move( ptr->next_ ) );
-        ++size_;
-        return { (ptr->next_).get() };
+        return insert_after( position, 1, value );
     }
 
     iterator insert_after( const_iterator position, value_type &&value ) {
@@ -369,8 +364,8 @@ public:
         ptr->next_ = make_unique<node>( std::move( value ), std::move( ptr->next_ ) );
         ++size_;
         return { (ptr->next_).get() };        
-    }
-    
+    }    
+
     iterator insert_after( const_iterator position, size_type n, const value_type &value ) {
         if( position == cend() ) {
             throw forward_list_exception( "forward_list::insert_after(): the specity iterator is  a off-the-end iterator" );
@@ -384,7 +379,7 @@ public:
         return { ptr };
     }
 
-   template <class InputIterator>
+    template<typename InputIterator, typename = RequireInputIterator<InputIterator>>
     iterator insert_after( const_iterator position, InputIterator first, InputIterator last ) {
         if( position == cend() ) {
             throw forward_list_exception( "forward_list::insert_after(): the specity iterator is  a off-the-end iterator" );
@@ -396,8 +391,8 @@ public:
             ptr = (ptr->next_).get();
             ++size_;
         }
-
-        return { ptr };        
+        
+        return { ptr };
     }
 
     iterator insert_after( const_iterator position, std::initializer_list<value_type> lst ) {
@@ -465,6 +460,7 @@ public:
                           comp );
         head_->next_ = std::move( ptr );
         other.head_->next_ = nullptr;
+        other.size_ = 0;
     }
 
     template <class Compare = std::less<value_type>>
@@ -475,6 +471,7 @@ public:
                           comp );
         head_->next_ = std::move( ptr );
         other.head_->next_ = nullptr;
+        other.size_ = 0;
     }
 
     void reverse() noexcept {
@@ -504,7 +501,7 @@ public:
                 ++iter;
             }
             (iter.current_)->next_ = nullptr;
-        } 
+        }
 
         if( n > size_ ) {
             auto iter = cbefore_begin();
@@ -513,6 +510,8 @@ public:
             }
             insert_after( iter, n - size_, value );
         }
+
+        size_ = n;
     }
 
     void splice_after( const_iterator position, forward_list &fwdlst ) {
@@ -541,8 +540,34 @@ public:
         
     }
 
+    template <typename BinaryPredicate = std::equal_to<value_type>>
+    void unique( BinaryPredicate binary_pred = BinaryPredicate{} ) {
+        if( size_ < 2 ) {
+            return;
+        }
+        auto last = end();
+        auto previous = cbegin();
+        auto current = begin();
+        ++current;
+
+        while( current != last ) {
+            if( binary_pred( *previous, *current ) ) {
+                current = erase_after( previous );
+            } else {
+                ++previous;
+                ++current;
+            }
+        }
+    }
+
+    // use merge sort
+    template <typename Compare = std::less<value_type>>
+    void sort( Compare comp = Compare{} ) {
+        head_->next_ = merge_sort( std::move( head_->next_ ), comp );
+    }
+
 private:
-    template <typename InputIterator>
+    template <typename InputIterator, typename = RequireInputIterator<InputIterator>>
     std::unique_ptr<node> copy_forward_list( InputIterator first, InputIterator last ) {
         if( first == last ) {
             return nullptr;
@@ -554,6 +579,26 @@ private:
         return front;
     }
  
+    template <typename Compare>
+    std::unique_ptr<node> merge_sort( std::unique_ptr<node> link, Compare comp ) {
+        if( link == nullptr || link->next_ == nullptr ) {
+            return link;
+        }
+        auto left = std::move( link );
+        node *current = left.get();
+        node *next = (current->next_).get();
+        
+        while( next != nullptr && next->next_ != nullptr ) {
+            current = next;
+            next = (next->next_->next_).get();
+        }
+        auto right = std::move( current->next_ );
+
+        left = merge_sort( std::move( left ), comp );
+        right = merge_sort( std::move( right ), comp );
+        return merge( std::move( left ), std::move( right ), comp );
+    }
+
     // left point to the first element in the first forward_list
     // right point to the first element in the second forward_list
     template <typename Comp>
