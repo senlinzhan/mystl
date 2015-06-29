@@ -180,7 +180,11 @@ private:
 public:
     forward_list() = default;             
     
-    explicit forward_list( size_type n, const value_type &value = value_type() ) {
+    explicit forward_list( size_type n ) 
+        : forward_list( n, value_type() )
+    {  }
+
+    forward_list( size_type n, const value_type &value ) {
         for( size_type i = 0; i < n; ++i ) {
             push_front( value );
         }
@@ -188,16 +192,12 @@ public:
 
     template <class InputIterator, typename = RequireInputIterator<InputIterator>>
     forward_list( InputIterator first, InputIterator last ) {
-        auto new_list = copy_forward_list( first, last );
-        head_->next_ = std::move( new_list );
+        head_->next_ = copy_forward_list( first, last );
     }
 
-    forward_list( const forward_list &other ) {
-        if( *this != other ) {
-            auto new_list = copy_forward_list( other.begin(), other.end() );
-            head_->next_ = std::move( new_list );
-        }
-    }
+    forward_list( const forward_list &other ) 
+        : forward_list( other.cbegin(), other.cend() )
+    {  }
 
     forward_list( forward_list &&other ) noexcept {
         swap( other );
@@ -226,29 +226,24 @@ public:
     }
 
     forward_list &operator=( std::initializer_list<value_type> lst ) {
-        size_ = 0;
-        auto new_list = copy_forward_list( lst.begin(), lst.end() );
-        head_->next_ = std::move( new_list );
+        clear();
+        head_->next_ = copy_forward_list( lst.begin(), lst.end() );
         return *this;
     }
     
     void push_front( const value_type &value ) {
-        auto ptr = make_unique<node>( value, std::move( head_->next_ ) );
-        head_->next_ = std::move( ptr );
-        ++size_;
+        auto copy = value;
+        push_front( std::move( copy ) );
     }
 
     void push_front( value_type &&value ) {
-        auto ptr = make_unique<node>( std::move( value ), std::move( head_->next_ ) );
-        head_->next_ = std::move( ptr );
-        ++size_;
+        emplace_front( std::move( value ) );
     }
 
     template <class... Args>
     void emplace_front( Args&&... args ) {
-        auto ptr = make_unique<node>( value_type( std::forward<Args>(args)... ), 
-                                      std::move( head_->next_ ) );
-        head_->next_ = std::move( ptr );
+        head_->next_ = make_unique<node>( value_type( std::forward<Args>(args)... ), 
+                                          std::move( head_->next_ ) );
         ++size_;
     }
 
@@ -264,15 +259,14 @@ public:
         if( empty() ) {
             throw forward_list_exception( "forward_list::pop_front(): forward_list is empty!" );
         }
-        head_->next_ = std::move( head_->next_->next_ );
-        --size_;
+        erase_after( cbegin() );
     }
     
     reference front() {
         if( empty() ) {
             throw forward_list_exception( "forward_list::front(): forward_list is empty!" );
         }
-        return head_->next_->value_;
+        return *begin();
     }
 
     const_reference front() const {
@@ -374,7 +368,8 @@ public:
     }
 
     iterator insert_after( const_iterator position, const value_type &value ) {
-        return insert_after( position, 1, value );
+        auto copy = value;
+        return insert_after( position, std::move( copy ) );
     }
 
     iterator insert_after( const_iterator position, value_type &&value ) {
