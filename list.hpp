@@ -191,20 +191,25 @@ public:
         init();
     }
     
-    explicit list( size_type n, const value_type &value = value_type() ) {
+    explicit list( size_type n ) 
+        : list( n, value_type() )
+    {  }
+
+    list( size_type n, const value_type &value ) {
         init();
-        for( size_type i = 0; i < n; ++i ) {
-            push_back( value );
-        }
+        insert( cend(), n, value );
     }
 
     template <class InputIterator, typename = RequireInputIterator<InputIterator>>
     list( InputIterator first, InputIterator last ) {
         init();
-        for( auto iter = first; iter != last; ++iter ) {
-            push_back( *iter );
-        }
+        insert( cend(), first, last );
     }
+
+    list( std::initializer_list<value_type> lst ) 
+        : list( lst.begin(), lst.end() ) 
+    {  }
+
 
     list( const list &other )
         : list( other.cbegin(), other.cend() ) 
@@ -245,25 +250,15 @@ public:
         tail_->previous_ = get_raw( head_ );
         size_ = 0;
     }
-    
-    list( std::initializer_list<value_type> lst ) 
-        : list( lst.begin(), lst.end() ) 
-    {  }
-    
 
     list &operator=( std::initializer_list<value_type> lst ) {
-        clear();
-        for( const auto &elem : lst ) {
-            push_back( elem );
-        }
+        assign( lst.begin(), lst.end() );
         return *this;
     }
 
     void assign( size_type n, const value_type &value ) {
         clear();
-        for( size_type i = 0; i < n; ++i ) {
-            push_back( value );
-        }
+        insert( cend(), n, value );
     }
 
     template<typename InputIterator, typename = RequireInputIterator<InputIterator>>
@@ -355,15 +350,15 @@ public:
    }
 
     void resize( size_type new_size, const value_type &value ) {
-        if( new_size == size_ ) {
-            return;
-        }
-        
-        if( new_size < size_ ) {
+        // if new_size equals to size_, do nothing
+        if( new_size < size_ ) 
+        {
             auto iter = begin();
             std::advance( iter, new_size );             // move iter to the first illegal node
             erase( iter, end() );
-        } else {
+        } 
+        else if( new_size > size_ ) 
+        {
             insert( cend(), new_size - size_, value );   
         }
     }
@@ -417,97 +412,66 @@ public:
     }
 
     template<typename... Args>
-    iterator emplace( const_iterator position, Args&&... args ) {
+    iterator emplace( const_iterator position, Args&&... args ) 
+        {
         auto prev_node = position.ptr_->previous_;
         auto curr_node = std::move( prev_node->next_ );
+        
         auto new_node = make_unique<node>( value_type( std::forward<Args>( args )... ),
                                            prev_node, std::move( curr_node ) );
+
         new_node->next_->previous_ = get_raw( new_node );
-        iterator iter( get_raw( new_node ) );
         prev_node->next_ = std::move( new_node );
         ++size_;
-        return iter;
+        return to_non_const( --position );
     }
 
-    iterator insert( const_iterator position, const value_type &value ) {
+    iterator insert( const_iterator pos, const value_type &value ) {
         auto copy = value;
-        return insert( position, std::move( copy ) );
+        return insert( pos, std::move( copy ) );
     }
 
-    iterator insert( const_iterator position, value_type &&value ) {
-        return emplace( position, std::move( value ) ); 
+    iterator insert( const_iterator pos, value_type &&value ) {
+        return emplace( pos, std::move( value ) ); 
     }
         
-    iterator insert( const_iterator position, std::initializer_list<value_type> lst ) {
-        return insert( position, lst.begin(), lst.end() );
+    iterator insert( const_iterator pos, std::initializer_list<value_type> lst ) {
+        return insert( pos, lst.begin(), lst.end() );
     }
 
-    iterator insert( const_iterator position, size_type n, const value_type &value ) {
+    /**
+       inserts n copies of value before iterator position pos 
+       returns the position of the first new element or pos if there is no new element ( n equals to zero )
+    **/
+    iterator insert( const_iterator pos, size_type n, const value_type &value ) {
         if( n == 0 ) {
-            return to_non_const( position );
+            return to_non_const( pos );
         }
-        auto first_inserted = insert( position, value );
+        auto first_inserted = insert( pos, value );
 
         for( size_type i = 1; i < n; ++i ) {
-            insert( position, value );            
+            insert( pos, value );            
         }        
         return first_inserted;        
     }
 
+    /**
+       inserts a copy of all elements of the range [first, last) before iterator position pos 
+       returns the position of the first new element or pos if there is no new element
+    **/
     template<typename InputIterator, typename = RequireInputIterator<InputIterator>> 
-    iterator insert( const_iterator position, InputIterator first, InputIterator last ) {
+    iterator insert( const_iterator pos, InputIterator first, InputIterator last ) {
         if( first == last ) {
-            return to_non_const( position );
+            return to_non_const( pos );
         }
         
-        auto first_inserted = insert( position, *first );
+        auto first_inserted = insert( pos, *first );
 
         for( auto iter = ++first; iter != last; ++iter ) {
-            insert( position, *iter );
+            insert( pos, *iter );
         }
         
         return first_inserted;
-    }
-
-    iterator erase( const_iterator position ) {
-        if( position == cend() ) {
-            throw list_exception( "list::erase(): the specify const_iterator is an off-the-end iterator!" );
-        }
-        auto prev_node = position.ptr_->previous_;
-        auto next_node = std::move( position.ptr_->next_ );
-        next_node->previous_ = prev_node;
-        prev_node->next_ = std::move( next_node );
-        --size_;
-        return { get_raw( prev_node->next_ ) };
-    }
-
-    iterator erase( const_iterator first, const_iterator last ) {
-        while( first != last ) {
-            first = erase( first );
-        }
-        return to_non_const( last );
-    }
-
-    void splice( const_iterator position, list &&other ) noexcept {
-        
-    }
-
-    void splice( const_iterator position, list &&other, const_iterator i ) noexcept {
-        
-    }
-
-    void splice( const_iterator position, list &other, const_iterator i ) noexcept {
-        splice( position, std::move( other ), i );
-    }
-
-    void splice( const_iterator position, list &&other, 
-                 const_iterator first, const_iterator last ) noexcept {
-        
-    }
-    
-    void splice( const_iterator position, list &other, 
-                 const_iterator first, const_iterator last ) noexcept {
-        splice( position, std::move( other ), first, last );
     }
 
     void remove( const value_type &value ) {
@@ -535,7 +499,8 @@ public:
     }
 
     template<typename BinaryPredicate>
-    void unique( BinaryPredicate bin_pred ) {
+    void unique( BinaryPredicate bin_pred ) 
+    {
         if( size_ < 2 ) {
             return;
         }
@@ -554,6 +519,29 @@ public:
         }
     }
 
+    iterator erase( const_iterator position ) {
+        if( position == cend() ) {
+            throw list_exception( "list::erase(): the specify const_iterator is an off-the-end iterator!" );
+        }
+        auto prev_node = position.ptr_->previous_;
+        prev_node->next_ = std::move( position.ptr_->next_ );
+        prev_node->next_->previous_ = prev_node;
+        --size_;
+        
+        return { get_raw( prev_node->next_ ) };
+    }
+
+    /**
+       removes all elements of the range [fist, end) 
+       returns the position of the next element
+    **/
+    iterator erase( const_iterator first, const_iterator last ) {
+        while( first != last ) {
+            first = erase( first );
+        }
+        return to_non_const( last );
+    }
+
     void merge( list &&lst ) {
         merge( std::move( lst ), std::less<value_type>() );
     }
@@ -562,19 +550,86 @@ public:
         merge( std::move( lst ) ); 
     }
 
-
-    template<typename Comp>
-    void merge( list &&lst, Comp comp ) {
-        
-    }
-
     template<typename Comp>
     void merge( list &lst, Comp comp ) {
         merge( std::move( lst ), comp );
     }
 
-    void reverse() noexcept {
+    template<typename Comp>
+    void merge( list &&lst, Comp comp )
+    {
+        list new_list;        
 
+        auto iter1 = begin(), last1 = end();
+        auto iter2 = lst.begin(), last2 = lst.end();
+        
+        while( iter1 != last1 && iter2 != last2 ) 
+        {
+            if( comp( *iter1, *iter2 ) ) 
+            {
+                new_list.push_back( std::move( *iter1 ) );
+                ++iter1;
+            } 
+            else 
+            {
+                new_list.push_back( std::move( *iter2 ) );
+                ++iter2;
+            }
+        }
+        
+        if( iter1 != last1 ) {
+            new_list.insert( new_list.end(), iter1, last1 );
+        } else {
+            new_list.insert( new_list.end(), iter2, last2 );
+        }
+
+        swap( new_list );
+    }
+
+    void reverse() noexcept {
+        if( size() < 2 ) {
+            return;
+        }
+        tail_ = get_raw( head_ );
+        auto curr = std::move( head_->next_ );
+        auto prev = std::move( head_ );
+        
+        while( curr ) {
+            auto next = std::move( curr->next_ );
+            prev->previous_ = get_raw( curr );            
+            curr->next_ = std::move( prev );
+            prev = std::move( curr );
+            curr = std::move( next );
+        }
+
+        head_ = std::move( prev );
+    }
+
+    void splice( const_iterator position, list &&other ) noexcept {
+        splice( position, std::move( other ), other.cbegin(), other.cend() );
+    }
+
+    void splice( const_iterator position, list &other ) noexcept {
+        splice( position, std::move( other ) );
+    }
+    
+
+    void splice( const_iterator position, list &other, const_iterator i ) noexcept {
+        splice( position, std::move( other ), i );
+    }
+
+    void splice( const_iterator position, list &other, 
+                 const_iterator first, const_iterator last ) noexcept {
+        splice( position, std::move( other ), first, last );
+    }
+
+    void splice( const_iterator position, list &&other, const_iterator i ) noexcept {
+        // TODO
+    }
+
+    void splice( const_iterator position, list &&other, 
+                 const_iterator first, const_iterator last ) noexcept {
+        // TODO
     }
 
     void sort() {
@@ -583,7 +638,7 @@ public:
 
     template<typename Comp>
     void sort( Comp comp ) {
-        
+        // TODO
     }
 
 private:
@@ -617,7 +672,28 @@ public:
     bool operator!=( const list<value_type> &other ) const noexcept {
         return !(*this == other);
     }
+
+    bool operator<( const list<value_type> &other ) const noexcept {
+        return std::lexicographical_compare( cbegin(), cend(), other.cbegin(), other.cend() );
+    }
+    
+    bool operator>( const list<value_type> &other ) const noexcept {
+        return other < *this;
+    }
+    
+    bool operator>=( const list<value_type> &other ) const noexcept {
+        return !( *this < other );
+    }
+
+    bool operator<=( const list<value_type> &other ) const noexcept {
+        return !( other < *this );
+    }
 };
+
+template <typename T>
+inline void swap( list<T> &left, list<T> &right ) noexcept {
+    left.swap( right );
+}
 
 template <typename T>
 inline std::ostream &operator<<( std::ostream &os, const list<T> &lst ) {

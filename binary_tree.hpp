@@ -223,25 +223,55 @@ public:
     template<typename InputIterator, typename = RequireInputIterator<InputIterator>>
     void assign( InputIterator first, InputIterator last ) {
         clear();
-        for( auto iter = first; iter != last; ++iter ) {
-            insert( *iter );
-        }
+        insert( first, last );
     }
 
     void assign( std::initializer_list<value_type> lst ) {
         assign( lst.begin(), lst.end() );
     }
+    
+    void assign( size_type size, value_type &value ) {
+        clear();
+        insert( size, value );
+    }
 
+    /**
+       insert value in tree, and increment the size by one
+       if value already in this tree, then just return
+    **/
     void insert( const value_type &value ) {
         auto copy = value;
         insert( std::move( copy ) );
     }
 
-    // insert value in tree, and increment the size by one
-    // if value already in this tree, then just return
-    void insert( value_type &&value )
+    void insert( value_type &&value ) {
+        emplace( std::move( value ) );
+    }
+
+    void insert( std::initializer_list<value_type> lst ) {
+        insert( lst.begin(), lst.end() );
+    }
+
+    template<typename InputIterator, typename = RequireInputIterator<InputIterator>> 
+    void insert( InputIterator first, InputIterator last ) {
+        std::for_each( first, last, [=]( InputIterator iter ) {  insert( *iter );  } );
+    }
+
+    void insert( size_type size, value_type &value ) {
+        for( size_type i = 0; i < size; ++i ) {
+            insert( value );
+        }
+    }
+
+    /**
+       insert value in tree, and increment the size by one
+       if value already in this tree, then just return
+    **/
+    template<typename... Args>
+    void emplace( Args&&... args )
     {
-        auto new_node = make_unique<node>( std::move( value ) );
+        auto new_node = make_unique<node>( value_type( std::forward<Args>( args )... ) );
+        auto &value = new_node->value_;
         // if the tree is empty, then store value in the root node
         if( !root_ ) {
             root_ = std::move( new_node );
@@ -251,14 +281,21 @@ public:
         
         node_raw_ptr parent = nullptr;
         node_raw_ptr child = get_raw( root_ );
+        
         while( child ) 
         {
             parent = child;
-            if( less_( value, child->value_ ) ) {
+            
+            if( less_( value, child->value_ ) ) 
+            {
                 child = get_raw( child->left_ );
-            } else if( less_( child->value_, value ) ) {
+            } 
+            else if( less_( child->value_, value ) ) 
+            {
                 child = get_raw( child->right_ );
-            } else {
+            }
+            else 
+            {
                 return;              // if value already exist, then just return
             }
         }
@@ -271,11 +308,6 @@ public:
         ++size_;
     }
 
-    void insert( std::initializer_list<value_type> lst ) {
-        for( const auto &elem : lst ) {
-            insert( elem );
-        }
-    }
 
     void clear() {
         root_ = nullptr;
@@ -365,11 +397,17 @@ public:
         while( child ) 
         {
             parent = child;
-            if( less_( value, child->value_ ) ) {
+         
+            if( less_( value, child->value_ ) ) 
+            {
                 child = get_raw( child->left_ );
-            } else if( less_( child->value_, value ) ) {
+            } 
+            else if( less_( child->value_, value ) )
+            {
                 child = get_raw( child->right_ );
-            } else {
+            }
+            else 
+            {
                 return true;                
             }
         }
@@ -382,13 +420,17 @@ public:
         }
     }
 
-    // if value is not in this tree, then do nothing
-    // thus this function will not throw exception
+    /**
+       if value is not in this tree, then do nothing
+       thus this function will not throw exception
+    **/
     void remove( const value_type &value ) noexcept {
         remove( value, root_ );
     }
 
-    // return by copy beacuse we must ensure that client can't modify this value
+    /**
+       return by copy beacuse we must ensure that client can't modify this value
+    **/
     value_type min() const {
         if( empty() ) {
             throw binary_tree_exception( "binary_tree::min(): the tree is empty!" );
@@ -396,7 +438,6 @@ public:
         return finMin( root_ )->value_;
     }
 
-    // return by copy beacuse we must ensure that client can't modify this value
     value_type max() const {
         if( empty() ) {
             throw binary_tree_exception( "binary_tree::max(): the tree is empty!" );
@@ -416,10 +457,13 @@ private:
             remove( value, ptr->right_ );
         } else { 
             // value equals to ptr->value_
-            if( ptr->left_ && ptr->right_ ) {
+            if( ptr->left_ && ptr->right_ ) 
+            {
                 ptr->value_ = finMin( ptr->right_ )->value_;
                 remove( ptr->value_, ptr->right_ );
-            } else {
+            } 
+            else 
+            {
                 ptr = ptr->left_ ? std::move( ptr->left_ ) : std::move( ptr->right_ );
                 --size_;
             }
@@ -506,6 +550,5 @@ std::ostream &operator<<( std::ostream &os, const binary_tree<T, Comp> &tree ) {
     tree.print( os, " " );
     return os;
 }
-
 
 #endif /* _BINARY_TREE_H_ */

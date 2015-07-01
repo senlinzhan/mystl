@@ -115,7 +115,9 @@ public:
         create_elements( first, last );
     }
 
-    // can handle the problem of self-assignment, see C++ Primer 5th section 13.3
+    /**
+       can handle the problem of self-assignment, see C++ Primer 5th section 13.3
+    **/
     vector &operator=( const vector &other ) {
         auto copy = other;
         swap( copy );
@@ -133,17 +135,11 @@ public:
     }
 
     vector &operator=( std::initializer_list<value_type> lst ) {
-        clear_elements();
-        create_elements( lst.begin(), lst.end() );
+        assign( lst.begin(), lst.end() );
     }
 
     virtual ~vector() {
         clear_elements();
-    }
-    
-    void assign( size_type n, const value_type &value ) {
-        clear_elements();
-        create_elements( n, value );
     }
 
     void clear() {
@@ -158,6 +154,11 @@ public:
 
     void assign( std::initializer_list<value_type> lst ) {
         assign( lst.begin(), lst.end() );
+    }
+
+    void assign( size_type n, const value_type &value ) {
+        clear_elements();
+        create_elements( n, value );
     }
 
     iterator begin() noexcept {
@@ -193,19 +194,19 @@ public:
     }
 
     const_iterator cbegin() const noexcept {
-        return elem_;
+        return begin();
     }
 
     const_iterator cend() const noexcept {
-        return free_;
+        return end();
     }
 
     const_reverse_iterator crbegin() const noexcept {
-        return const_reverse_iterator( free_ );
+        return rbegin();
     }
 
     const_reverse_iterator crend() const noexcept {
-        return const_reverse_iterator( elem_ );
+        return rend();
     }
 
     size_type size() const noexcept {
@@ -217,7 +218,36 @@ public:
     }
 
     void resize( size_type new_size, const value_type &value ) {
-        
+        if( new_size < size() ) 
+        {
+            erase( begin() + new_size, end() );
+        }
+        else if( new_size > size() ) 
+        {
+            insert( end(), size() - new_size, value );
+        }
+    }
+
+    /** 
+        push_back() is exception safe because if exception throw by value_type's copy constructor
+        all element will be destroy and all memory will free by vector's destructor
+    **/
+    void push_back( const value_type &value ) {
+        auto copy = value;                 // value_type's copy constructor may throw 
+        push_back( std::move( copy ) );
+    }
+
+    void push_back( value_type &&value ) {
+        emplace_back( std::move( value ) );
+    }
+
+    template<typename... Args> 
+    void emplace_back( Args&&... args ) {
+        if( free_ == last_ ) {
+            expand_double();
+        }
+        alloc_.construct( free_, std::forward<Args>( args )... );
+        ++free_;        
     }
 
     void shrink_to_fit() {
@@ -267,7 +297,7 @@ public:
         if( !elem_ ) {
             throw vector_exception( "vector::front(): vector is empty!" );
         }
-        return *elem_;
+        return *begin();
     }
 
     const_reference front() const {
@@ -278,46 +308,11 @@ public:
         if( !elem_ ) {
             throw vector_exception( "vector::back(): vector is empty!" );
         }
-        return *elem_;        
+        return *rbegin();        
     }
       
     const_reference back() const noexcept {
         return const_cast<vector *>( this )->back();
-    }
-
-    // this function is exception safe because
-    // if  exception throw by value_type's copy constructor
-    // all element will be destroy and all memory will free by vector's destructor
-    void push_back( const value_type &value ) {
-        if( free_ == last_ ) {
-            expand_double();
-        }
-        alloc_.construct( free_, value );    // value_type's copy constructor may throw 
-        ++free_;
-    }
-
-    // this function is exception safe because
-    // if  exception throw by value_type's copy constructor
-    // all element will be destroy and all memory will free by vector's destructor
-    void push_back( value_type &&value ) {
-        if( free_ == last_ ) {
-            expand_double();
-        }
-        if( std::is_nothrow_move_constructible<value_type>() ) {
-            alloc_.construct( free_, std::move( value ) );
-        } else {
-            alloc_.construct( free_, value );    // value_type's copy constructor may throw 
-        }
-        ++free_;
-    }
-
-    template<typename... Args> 
-    void emplace_back( Args&&... args ) {
-        if( free_ == last_ ) {
-            expand_double();
-        }
-        alloc_.construct( free_, std::forward<Args>( args )... );
-        ++free_;        
     }
 
     void pop_back() {
@@ -328,37 +323,126 @@ public:
     }
 
     template<typename... Args>
-    iterator emplace( const_iterator position, Args&&... args ) {
+    iterator emplace( const_iterator position, Args&&... args ) 
+    {
+        if( position < cbegin() || position > cend() ) {
+            throw vector_exception( "vector::emplace(): the specify iterator is invalid" );
+        }
         
+        if( position == cend() ) {
+            emplace_back( std::forward<Args>( args )... );
+            return free_ - 1;
+        }
+        
+        difference_type diff = position - cbegin();
+
+        // if we expand vector's size, then position will be invalid
+        if( free_ == last_ ) {
+            expand_double();
+        }
+        
+        // Note: we can't use position now, because position may be invalid, we use pos instead
+        auto pos = elem_ + diff;
+        
+        // we construct a new element as the last element
+        alloc_.construct( free_, *( free_ - 1 ) );
+        ++free_;
+
+        // move elements
+        for( auto iter = free_ - 2; iter != pos; --iter ) {
+            *iter = std::move( *( iter - 1 ) );
+        }
+        
+        *pos = value_type( std::forward<Args>( args )... );
+
+        return pos;
     }
     
     iterator insert( const_iterator position, const value_type &value ) {
-        insert( position, 1, value );
+        auto copy = value;
+        return insert( position, std::move( copy ) );
     }
 
     iterator insert( const_iterator position, value_type &&value ) {
-        
+        return emplace( position, std::move( value ) );
     }
 
     iterator insert( const_iterator position, std::initializer_list<value_type> lst ) {
-        insert( position, lst.begin(), lst.end() );
-    }
-    
-    iterator insert( const_iterator position, size_type n, const value_type &value ) {
-        
+        return insert( position, lst.begin(), lst.end() );
     }
 
-    template<typename InputIterator, typename = RequireInputIterator<InputIterator>>
-    iterator insert( const_iterator position, InputIterator first, InputIterator last ) {
+    /**
+       inserts n copies of value before the specify iterator 
+       returns the position of the first new element 
+       or return the origin iterator if there is no new element ( n equals to zero )
+    **/    
+    iterator insert( const_iterator position, size_type n, const value_type &value ) 
+    {
+        auto pos = to_non_const( position );
+
+        if( n == 0 ) {
+            return pos;
+        }
         
+        // we must always update iterator because iterator may be in invalid state
+        for( size_type i = 0; i < n; ++i ) {
+            pos = insert( pos, value );            
+        }        
+        return pos;
+    }
+
+    /**
+       inserts a copy of all elements of the range [first, last) before the specify iterator 
+       returns the position of the first new element 
+       or return the origin iterator if there is no new element ( n equals to zero )
+    **/
+    template<typename InputIterator, typename = RequireInputIterator<InputIterator>>
+    iterator insert( const_iterator position, InputIterator first, InputIterator last ) 
+    {
+        auto pos = to_non_const( position );
+
+        if( first == last ) {
+            return pos;
+        }
+        // we must always update iterator pos because pos may be in invalid state
+        for( auto iter = first; iter != last; ++iter ) {
+            pos = insert( pos, *iter );
+            ++pos;
+        }
+        pos -= std::distance( first, last );
+        
+        return pos;
     }
     
-    iterator erase( const_iterator position ) {
+    /** 
+        removes the element at iterator position pos and returns the position of the next element
+     **/
+    iterator erase( const_iterator position )
+    {
+        // if iterator points to invalid range, then throw exception
+        if( position < cbegin() || position >= cend() ) {
+            throw vector_exception( "vector::erase(): the specify iterator is invalid" );
+        }        
+        auto pos = to_non_const( position );
         
+        if( position + 1 != cend() ) {
+            std::move( position + 1, cend(), pos );
+        }
+        // destroy the last element
+        alloc_.destroy( --free_ );
+        
+        return pos;
     }
 
     iterator erase( const_iterator first, const_iterator last ) {
+        if( !( first >= cbegin() && last <= cend() ) ) {
+            throw vector_exception( "vector::erase(): the specify range is invalid" );
+        }
+        auto iter = std::move( to_non_const( last ), free_, to_non_const( first ) );
+        destroy_elements( iter, free_ );
         
+        free_ = iter;
+        return to_non_const( first );
     }
 
     void swap( vector &other ) noexcept {
@@ -373,7 +457,6 @@ public:
             os << elem << delim;
         }
     }
-    
     
 private:
     void expand_double() {
@@ -403,7 +486,10 @@ private:
                 throw;
             }
         }
-
+        
+        // remember to clear the origin vector's content
+        clear_elements();
+        
         elem_ = new_elem;
         free_ = new_free;
         last_ = new_elem + new_size;
@@ -449,14 +535,32 @@ private:
     // assume value_type's destructor always can't throw exception
     void clear_elements() noexcept {
         if( elem_ ) {
-            auto iter = free_;
-            while( iter != elem_ ) {
-                alloc_.destroy( --iter ); 
-            }
+            destroy_elements( elem_, free_ );
             alloc_.deallocate( elem_, last_ - elem_ );
             elem_ = free_ = last_ = nullptr;
         }
     }
+
+    void destroy_elements( iterator first, iterator last ) noexcept {
+        auto iter = last;
+        while( iter != first ) {
+            alloc_.destroy( --iter ); 
+        }
+    }
+
+    iterator to_non_const( const_iterator iter ) {
+        return const_cast<iterator>( iter );
+    }
+
+    void sort() {
+        sort( std::less<value_type>() );
+    }
+    
+    template <typename Comp>
+    void sort( Comp comp ) {
+        std::sort( begin(), end(), comp );
+    }
+
 public:
     bool operator==( const vector &other ) const noexcept {
         if( this == &other ) {     // equals to itself
@@ -473,6 +577,21 @@ public:
         return !(*this == other);
     }
 
+    bool operator<( const vector<value_type> &other ) const noexcept {
+        return std::lexicographical_compare( cbegin(), cend(), other.cbegin(), other.cend() );
+    }
+    
+    bool operator>( const vector<value_type> &other ) const noexcept {
+        return other < *this;
+    }
+    
+    bool operator>=( const vector<value_type> &other ) const noexcept {
+        return !( *this < other );
+    }
+
+    bool operator<=( const vector<value_type> &other ) const noexcept {
+        return !( other < *this );
+    }
 };
 
 template <typename Type, typename Allocator>
@@ -483,6 +602,7 @@ void swap( vector<Type, Allocator> &first, vector<Type, Allocator> &second ) noe
 template <typename T, typename Alloc>
 std::ostream &operator<<( std::ostream &os, const vector<T, Alloc> &vec ) {
     vec.print( os, " " );
+    return os;
 }
 
 }; // namespace mystl

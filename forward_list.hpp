@@ -549,7 +549,7 @@ public:
 
         // otherwise 
         auto first = i;
-        auto last = ++( ++i );
+        auto last = ++iter;
         return splice_after( position, std::move( other ), first, last );
     }
     
