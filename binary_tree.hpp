@@ -15,9 +15,10 @@
 
 #include "memory.hpp"
 #include "iterator.hpp"
-#include <stack>
 #include <functional>
 #include <iostream>
+
+namespace mystl {
 
 class binary_tree_exception : public std::exception
 {
@@ -154,13 +155,25 @@ public:
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
 private:
-    node_ptr root_ = nullptr;             // point to root node
-    size_type size_ = 0;                  // number of nodes
     Comp less_;                           // for compare elements
+    node_ptr root_;                       // point to root node
+    size_type size_ = 0;                  // number of nodes
     
 public:
-    binary_tree() = default;              
+    binary_tree( Comp comp = Comp() ) 
+        : less_( comp )
+    {  }
+
+    template <typename InputIterator, typename = RequireInputIterator<InputIterator>>
+    binary_tree( InputIterator first, InputIterator last, Comp comp = Comp() ) 
+        : less_( comp ) {
+        insert( first, last );
+    }
     
+    binary_tree( std::initializer_list<value_type> lst, Comp comp = Comp() ) 
+        : binary_tree( lst.begin(), lst.end(), comp )
+    {  }
+
     binary_tree( const binary_tree &tree ) {
         root_ = clone_tree( tree.root_ );
         size_ = tree.size_;
@@ -177,39 +190,24 @@ public:
         return *this;
     }
     
-    // root_ will be set to nullptr, thus free all the memory
-    // then root_ will be set to tree.root_ 
-    // and tree.root_ will be set to nullptr 
+    /**
+       root_ will be set to nullptr, thus free all the memory
+       then root_ will be set to tree.root_ 
+       and tree.root_ will be set to nullptr 
+    **/
     binary_tree &operator=( binary_tree &&tree ) noexcept {
         // handle the problem of self-move-assignment
         if( *this != tree ) {
-            root_ = std::move( tree.root_ );     
-            size_ = tree.size_;
-            tree.size_ = 0;
+            clear();
+            swap( tree );
         }
         return *this;
     }
 
     binary_tree &operator=( std::initializer_list<value_type> lst ) {
-        // clear all elemtns and free memory
-        clear();                        
-        // insert all elemtns from lst
-        for( const auto &elem : lst ) {
-            insert( elem );
-        }
+        assign( lst.begin(), lst.end() );
         return *this;
     }
-
-    template <typename InputIterator, typename = RequireInputIterator<InputIterator>>
-    binary_tree( InputIterator first, InputIterator last ) {
-        for( auto iter = first; iter != last; ++iter ) {
-            insert( *iter );
-        }
-    }
-
-    binary_tree( std::initializer_list<value_type> lst ) 
-        : binary_tree( lst.begin(), lst.end() )
-    {  }
 
     // call root_'s destructor, all nodes' memory will be free 
     virtual ~binary_tree() = default;
@@ -254,7 +252,7 @@ public:
 
     template<typename InputIterator, typename = RequireInputIterator<InputIterator>> 
     void insert( InputIterator first, InputIterator last ) {
-        std::for_each( first, last, [=]( InputIterator iter ) {  insert( *iter );  } );
+        std::for_each( first, last, [=]( const value_type &elem ) {  insert( elem );  } );
     }
 
     void insert( size_type size, value_type &value ) {
@@ -285,17 +283,11 @@ public:
         while( child ) 
         {
             parent = child;
-            
-            if( less_( value, child->value_ ) ) 
-            {
+            if( less_( value, child->value_ ) ) {
                 child = get_raw( child->left_ );
-            } 
-            else if( less_( child->value_, value ) ) 
-            {
+            } else if( less_( child->value_, value ) ) {
                 child = get_raw( child->right_ );
-            }
-            else 
-            {
+            } else {
                 return;              // if value already exist, then just return
             }
         }
@@ -398,16 +390,11 @@ public:
         {
             parent = child;
          
-            if( less_( value, child->value_ ) ) 
-            {
+            if( less_( value, child->value_ ) ) {
                 child = get_raw( child->left_ );
-            } 
-            else if( less_( child->value_, value ) )
-            {
+            } else if( less_( child->value_, value ) ) {
                 child = get_raw( child->right_ );
-            }
-            else 
-            {
+            } else {
                 return true;                
             }
         }
@@ -457,13 +444,10 @@ private:
             remove( value, ptr->right_ );
         } else { 
             // value equals to ptr->value_
-            if( ptr->left_ && ptr->right_ ) 
-            {
+            if( ptr->left_ && ptr->right_ ) {
                 ptr->value_ = finMin( ptr->right_ )->value_;
                 remove( ptr->value_, ptr->right_ );
-            } 
-            else 
-            {
+            } else {
                 ptr = ptr->left_ ? std::move( ptr->left_ ) : std::move( ptr->right_ );
                 --size_;
             }
@@ -550,5 +534,7 @@ std::ostream &operator<<( std::ostream &os, const binary_tree<T, Comp> &tree ) {
     tree.print( os, " " );
     return os;
 }
+
+};
 
 #endif /* _BINARY_TREE_H_ */
