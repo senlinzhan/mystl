@@ -32,15 +32,23 @@ public:
      */
     using local_iterator       = typename mystl::forward_list<value_type>::const_iterator;
     using const_local_iterator = typename mystl::forward_list<value_type>::const_iterator;
-    
+
+
+    // iterator is same as const_iterator
+    // because we don't want user modify element by using iterator
     class const_iterator
     {
+        friend class unordered_set;
     public:
         using value_type        = T;
         using pointer           = const T*;
         using reference         = const T&;
         using iterator_category = std::forward_iterator_tag;
         
+        const_iterator() 
+            : ptr_( nullptr ), index_( 0 )
+        {  }
+
         reference operator*() const { 
             return *iter_;
         }
@@ -51,16 +59,8 @@ public:
         
         const_iterator &operator++() noexcept {
             ++iter_;
-            if( iter_ == (*ptr_)[index_].cend() ) {
-                do {
-                    ++index_;                    
-                } while( index_ < ptr_->size() && (*ptr_)[index_].empty() );
-
-                if( index_ != ptr_->size() ) {
-                    iter_ = (*ptr_)[index_].cbegin();                       
-                } else {
-                    iter_ = ptr_->back().cend();
-                }
+            while( iter_ == (*ptr_)[index_].cend() && ++index_ < ptr_->size() ) {
+                iter_ = (*ptr_)[index_].cbegin();
             }
             return *this;
         }
@@ -80,26 +80,47 @@ public:
         }
 
     protected:
-        const_iterator( bucket_vector *ptr, size_type index, local_iterator iter )
-            : ptr_( ptr ), index_( index ), iter_( iter ) 
-        {  }
+        const_iterator( bucket_vector *ptr, bool end )
+            : ptr_( ptr ) {
+            if( end ) {
+                index_ = ptr_->size();
+            } else {
+                index_ = 0;
+                iter_ = (*ptr_)[index_].cbegin();
+                while( iter_ == (*ptr_)[index_].cend() && ++index_ < ptr_->size() ) {
+                    iter_ = (*ptr_)[index_].cbegin();
+                }
+            }
+        }
+        
+        const_iterator( bucket_vector *ptr, size_type index, local_iterator iter ) 
+            : ptr_( ptr ), index_( index ), iter_( iter ){
+        }
 
     private:
-        bucket_vector *ptr_;
+        const bucket_vector *ptr_;
         size_type index_;
         local_iterator iter_;
     };
 
-    // iterator is same as const_iterator
-    // because we don't want user modify element by using iterator
+
     class iterator : public const_iterator 
-    { 
-        friend class unordered_set<T, Hash, Equal>;
+    {
+        friend class unordered_set;
+    public:
+        iterator() = default;
     protected:
-        iterator( bucket_vector *ptr, size_type index, local_iterator iter )
-            : const_iterator( ptr, index, iter )
+        iterator( bucket_vector *ptr, bool end )
+            : const_iterator( ptr, end )
+        {  }
+        iterator( bucket_vector *ptr, size_type index, local_iterator iter ) 
+            : const_iterator( ptr, index, iter ) 
         {  }
     };
+
+
+
+
 
 private:
     Hash          hash_;
@@ -239,9 +260,9 @@ public:
         if( iter == buckets_[pos].cend() ) {
             buckets_[pos].push_front( std::move( value ) );
             ++size_;
-            return { iterator{ &buckets_, pos, buckets_[pos].cbegin() }, true };
+            return { iterator{ &buckets_, pos, begin( pos ) }, true };
         } else {
-            return { iterator{ &buckets_, pos, buckets_[pos].cbegin() }, false };
+            return { iterator{ &buckets_, pos, begin( pos ) }, false };
         }
     }
     
@@ -252,7 +273,17 @@ public:
     }
 
     std::pair<iterator, bool> insert( value_type &&value ) {
-        return emplace( std::move( value ) );
+        rehash( size_ + 1 );
+        const size_type pos = hash_( value ) % bucket_count();
+        
+        auto iter = mystl::find( buckets_[pos].cbegin(), buckets_[pos].cend(), value );
+        if( iter == buckets_[pos].cend() ) {
+            buckets_[pos].push_front( std::move( value ) );
+            ++size_;
+            return { iterator{ &buckets_, pos, begin( pos ) }, true };
+        } else {
+            return { iterator{ &buckets_, pos, begin( pos ) }, false };
+        }
     }
 
     template<typename InputIterator, typename = RequireInputIterator<InputIterator>>
@@ -266,23 +297,19 @@ public:
     }
 
     iterator begin() noexcept {
-        return const_cast<unordered_set *>( this )->begin();
+        return { &buckets_, false };
     }
 
     const_iterator begin() const noexcept {
-        const_iterator iter( &buckets_, 0, buckets_.front().cbegin() );
-        if( iter == buckets_.front().cend() ) {
-            ++iter;
-        } 
-        return iter;
+        return const_cast<unordered_set *>( this )->begin();
     }
 
     iterator end() noexcept {
-        return const_cast<unordered_set *>( this )->end();
+        return { &buckets_, true };
     }
 
     const_iterator end() const noexcept {
-        return { &buckets_, buckets_.size() - 1, buckets_.back().cend() };        
+        return const_cast<unordered_set *>( this )->end();
     }
 
     const_iterator cbegin() const noexcept {
