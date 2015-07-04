@@ -142,8 +142,12 @@ public:
         clear_elements();
     }
 
+    /**
+       removes all elements from the vector, leaving the container with a size of 0
+       but we don't deallocate memory, vector's capacity doesn't change
+    **/
     void clear() {
-        clear_elements();
+        erase( cbegin(), cend() );
     }
 
     template<typename InputIterator, typename = RequireInputIterator<InputIterator>>
@@ -458,6 +462,15 @@ public:
         }
     }
     
+    void sort() {
+        sort( std::less<value_type>() );
+    }
+    
+    template <typename Comp>
+    void sort( Comp comp ) {
+        std::sort( begin(), end(), comp );
+    }
+
 private:
     void expand_double() {
         auto new_size = empty() ? 1 : size() * 2;
@@ -552,15 +565,6 @@ private:
         return const_cast<iterator>( iter );
     }
 
-    void sort() {
-        sort( std::less<value_type>() );
-    }
-    
-    template <typename Comp>
-    void sort( Comp comp ) {
-        std::sort( begin(), end(), comp );
-    }
-
 public:
     bool operator==( const vector &other ) const noexcept {
         if( this == &other ) {     // equals to itself
@@ -573,23 +577,23 @@ public:
         return mystl::equal( cbegin(), cend(), other.cbegin() );
     }
 
-    bool operator!=( const vector<value_type> &other ) const noexcept {
+    bool operator!=( const vector &other ) const noexcept {
         return !(*this == other);
     }
 
-    bool operator<( const vector<value_type> &other ) const noexcept {
+    bool operator<( const vector &other ) const noexcept {
         return std::lexicographical_compare( cbegin(), cend(), other.cbegin(), other.cend() );
     }
     
-    bool operator>( const vector<value_type> &other ) const noexcept {
+    bool operator>( const vector &other ) const noexcept {
         return other < *this;
     }
     
-    bool operator>=( const vector<value_type> &other ) const noexcept {
+    bool operator>=( const vector &other ) const noexcept {
         return !( *this < other );
     }
 
-    bool operator<=( const vector<value_type> &other ) const noexcept {
+    bool operator<=( const vector &other ) const noexcept {
         return !( other < *this );
     }
 };

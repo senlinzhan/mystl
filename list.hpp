@@ -658,7 +658,7 @@ private:
     }
 
 public:
-    bool operator==( const list<value_type> &other ) const noexcept {
+    bool operator==( const list &other ) const noexcept {
         if( this == &other ) {    // the same list
             return true;
         }
@@ -669,23 +669,23 @@ public:
         return mystl::equal( cbegin(), cend(), other.cbegin() );
     }
 
-    bool operator!=( const list<value_type> &other ) const noexcept {
+    bool operator!=( const list &other ) const noexcept {
         return !(*this == other);
     }
 
-    bool operator<( const list<value_type> &other ) const noexcept {
+    bool operator<( const list &other ) const noexcept {
         return std::lexicographical_compare( cbegin(), cend(), other.cbegin(), other.cend() );
     }
     
-    bool operator>( const list<value_type> &other ) const noexcept {
+    bool operator>( const list &other ) const noexcept {
         return other < *this;
     }
     
-    bool operator>=( const list<value_type> &other ) const noexcept {
+    bool operator>=( const list &other ) const noexcept {
         return !( *this < other );
     }
 
-    bool operator<=( const list<value_type> &other ) const noexcept {
+    bool operator<=( const list &other ) const noexcept {
         return !( other < *this );
     }
 };

@@ -716,7 +716,7 @@ private:
     }
 
 public:
-    bool operator==( const forward_list<value_type> &other ) const noexcept {
+    bool operator==( const forward_list &other ) const noexcept {
         if( this == &other ) {    // the same forward_list
             return true;
         }
@@ -727,23 +727,23 @@ public:
         return mystl::equal( cbegin(), cend(), other.cbegin() );
     }
 
-    bool operator!=( const forward_list<value_type> &other ) const noexcept {
+    bool operator!=( const forward_list &other ) const noexcept {
         return !(*this == other);
     }
 
-    bool operator<( const forward_list<value_type> &other ) const noexcept {
+    bool operator<( const forward_list &other ) const noexcept {
         return std::lexicographical_compare( cbegin(), cend(), other.cbegin(), other.cend() );
     }
     
-    bool operator>( const forward_list<value_type> &other ) const noexcept {
+    bool operator>( const forward_list &other ) const noexcept {
         return other < *this;
     }
     
-    bool operator>=( const forward_list<value_type> &other ) const noexcept {
+    bool operator>=( const forward_list &other ) const noexcept {
         return !( *this < other );
     }
 
-    bool operator<=( const forward_list<value_type> &other ) const noexcept {
+    bool operator<=( const forward_list &other ) const noexcept {
         return !( other < *this );
     }
 };
