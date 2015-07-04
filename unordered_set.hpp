@@ -199,7 +199,6 @@ public:
 
     unordered_set &operator=( std::initializer_list<value_type> lst ) {
         clear();
-        buckets_.
         insert( lst.begin(), lst.end() );
         return *this;
     }
