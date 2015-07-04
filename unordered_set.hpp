@@ -1,8 +1,8 @@
 #ifndef _UNORDERED_SET_H_
 #define _UNORDERED_SET_H_
 
-#include <stdint.h>
 #include <utility>
+#include <cstddef>
 #include "vector.hpp"
 #include "forward_list.hpp"
 #include "algorithm.hpp"
@@ -18,12 +18,15 @@ private:
     using bucket_vector   = mystl::vector<bucket_type>;
     
 public:
+    using key_type             = T;
     using value_type           = T;
-    using pointer              = T*;
+    using hasher               = Hash;
+    using key_equal            = Equal;
+    using pointer              = T *;
     using const_pointer        = const T*;
     using reference            = T&;
     using const_reference      = const T&;
-    using size_type            = size_t;
+    using size_type            = std::size_t;
     using difference_type      = std::ptrdiff_t;
 
     /*
@@ -33,9 +36,6 @@ public:
     using local_iterator       = typename mystl::forward_list<value_type>::const_iterator;
     using const_local_iterator = typename mystl::forward_list<value_type>::const_iterator;
 
-
-    // iterator is same as const_iterator
-    // because we don't want user modify element by using iterator
     class const_iterator
     {
         friend class unordered_set;
@@ -103,34 +103,20 @@ public:
         local_iterator iter_;
     };
 
-
-    class iterator : public const_iterator 
-    {
-        friend class unordered_set;
-    public:
-        iterator() = default;
-    protected:
-        iterator( bucket_vector *ptr, bool end )
-            : const_iterator( ptr, end )
-        {  }
-        iterator( bucket_vector *ptr, size_type index, local_iterator iter ) 
-            : const_iterator( ptr, index, iter ) 
-        {  }
-    };
-
-
-
-
-
+    /**
+       iterator is same as const_iterator
+       because we don't want user modify element by using iterator
+    **/
+    using iterator = const_iterator;
+    
 private:
-    Hash          hash_;
-    Equal         equal_;
-    bucket_vector buckets_;
-    size_type     size_ = 0;
+    hasher         hash_;
+    key_equal      equal_;
+    bucket_vector  buckets_;
+    size_type      size_ = 0;
 
     static const size_type PRIME_SIZE = 28;
     static const size_type prime_[PRIME_SIZE];
-    
     
     size_type next_prime( size_type n ) const {
         auto first = std::begin( prime_ );
@@ -147,21 +133,19 @@ public:
         buckets_.insert( buckets_.cend(), num, bucket_type() );
     }
     
-    explicit unordered_set( size_type bucket_num, const Hash &hashFunc = Hash(), 
-                            const Equal &equalFunc = Equal() )
-        : hash_( hashFunc ), equal_( equalFunc ) 
-    {
-        const size_type num = next_prime( bucket_num );
-        buckets_.reserve( num );
-        buckets_.insert( buckets_.cend(), num, bucket_type() );
-    }
+    explicit unordered_set( size_type bucket_num, const hasher &hash = hasher(), const key_equal &equal = key_equal() )
+        : hash_( hash ), 
+          equal_( equal ), 
+          buckets_( next_prime( bucket_num ), bucket_type() )
+    {  }    
 
     template<typename InputIterator>
 	unordered_set( InputIterator first, InputIterator last, size_type bucket_num = 0, 
-                   const Hash &hashFunc = Hash(), const Equal &equalFunc = Equal() ) {
-        const size_type num = next_prime( bucket_num );
-        buckets_.reserve( num );
-        buckets_.insert( buckets_.cend(), num, bucket_type() );
+                   const hasher &hash = hasher(), const key_equal &equal = key_equal() ) 
+        : hash_( hash ), 
+          equal_( equal ),
+          buckets_( next_prime( bucket_num ), bucket_type() )
+    {
         insert( first, last );
     }
 
@@ -194,14 +178,13 @@ public:
         if( size_hint <= bucket_count() ) {
             return;
         }
-        
         const size_type new_bucket_count = next_prime( size_hint );
-        if( new_bucket_count > bucket_count() ) {
+
+        if( new_bucket_count > bucket_count() ) 
+        {
             unordered_set other( new_bucket_count );
-            for( auto &lst : buckets_ ) {
-                for( auto &elem : lst ) {
-                    other.insert( std::move( elem ) );
-                }
+            for( auto &elem : *this ) {
+                other.insert( std::move( elem ) );
             }
             swap( other );
         }
@@ -256,7 +239,7 @@ public:
         rehash( size_ + 1 );
         const size_type pos = hash_( value ) % bucket_count();
         
-        auto iter = mystl::find( buckets_[pos].cbegin(), buckets_[pos].cend(), value );
+        auto iter = mystl::find( begin( pos ), end( pos ), value );
         if( iter == buckets_[pos].cend() ) {
             buckets_[pos].push_front( std::move( value ) );
             ++size_;
@@ -276,8 +259,8 @@ public:
         rehash( size_ + 1 );
         const size_type pos = hash_( value ) % bucket_count();
         
-        auto iter = mystl::find( buckets_[pos].cbegin(), buckets_[pos].cend(), value );
-        if( iter == buckets_[pos].cend() ) {
+        auto iter = mystl::find( cbegin( pos ), cend( pos ), value );
+        if( iter == cend( pos ) ) {
             buckets_[pos].push_front( std::move( value ) );
             ++size_;
             return { iterator{ &buckets_, pos, begin( pos ) }, true };
@@ -343,11 +326,6 @@ public:
     const_local_iterator cend( size_type bucket_index ) const {
         return buckets_[bucket_index].cend();
     }
-    
-    
-
-    
-
 };
 
 template <typename T, typename Hash, typename Equal>
@@ -365,8 +343,6 @@ unordered_set<T, Hash, Equal>::prime_[PRIME_SIZE] =
     25165843u, 50331653u, 100663319u, 201326611u, 402653189u, 805306457u, 
     1610612741u, 3221225473u, 4294967291u,
 };
-
-
 };
 
 
