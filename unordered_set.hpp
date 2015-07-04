@@ -167,8 +167,9 @@ public:
         insert( first, last );
     }
 
+	
 	unordered_set( std::initializer_list<value_type> lst, size_type bucket_num = 0, 
-                   const hasher &hash = hasher(), const key_equal &equal = key_equal() )
+				   const hasher &hash = hasher(), const key_equal &equal = key_equal() )
         : unordered_set( lst.begin(), lst.end(), bucket_num, hash, equal ) 
     {  }
     
