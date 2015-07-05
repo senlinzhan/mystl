@@ -3,8 +3,8 @@
 
 #include "heap.hpp"
 #include "vector.hpp"
+#include <exception>
 #include <string>
-#include <iostream>
 
 namespace mystl {
 
