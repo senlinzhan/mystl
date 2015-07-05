@@ -26,9 +26,11 @@ class unordered_set_exception : public std::exception
 public:
     explicit unordered_set_exception( const std::string &message ) 
         : message_( message )
-        {  }
+    {  
+    }
     
-    virtual const char * what() const noexcept override {
+    virtual const char * what() const noexcept override 
+    {
         return message_.c_str();
     }
     
