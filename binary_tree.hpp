@@ -356,37 +356,31 @@ public:
         size_ = 0;
     }
 
-    // linear time operation
     iterator begin()
     {
         return { this, false };
     }
 
-    // linear time operation
     const_iterator begin() const 
     {
         return const_cast<binary_tree *>( this )->begin();
     }
 
-    // constant time operation
     iterator end() noexcept 
     {
         return { this, true };
     }
 
-    // constant time operation
     const_iterator end() const noexcept 
     {
         return const_cast<binary_tree *>( this )->end();
     }
 
-    // linear time operation
     const_iterator cbegin() const 
     {
         return begin();
     }
 
-    // constant time operation
     const_iterator cend() const noexcept 
     {
         return end();
