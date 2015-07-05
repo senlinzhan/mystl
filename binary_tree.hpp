@@ -21,6 +21,7 @@
 
 namespace mystl {
 
+
 class binary_tree_exception : public std::exception
 {
 public:
@@ -35,6 +36,7 @@ public:
 private:
     std::string message_;
 };
+
 
 template <typename T, typename Comp = std::less<T>>
 class binary_tree

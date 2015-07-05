@@ -69,6 +69,7 @@ public:
         using value_type        = T;
         using pointer           = const T*;
         using reference         = const T&;
+        using difference_type   = std::ptrdiff_t;
         using iterator_category = std::forward_iterator_tag;
         
         const_iterator() 
@@ -380,7 +381,7 @@ public:
     }
 
     template<typename InputIterator, typename = RequireInputIterator<InputIterator>>
-	void insert( InputIterator first, InputIterator last ) 
+    void insert( InputIterator first, InputIterator last ) 
 	{
         while( first != last ) 
         {

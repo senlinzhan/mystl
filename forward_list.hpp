@@ -25,6 +25,7 @@
 
 namespace mystl {
 
+
 class forward_list_exception : public std::exception
 {
 public:
@@ -40,27 +41,31 @@ private:
     std::string message_;
 };
 
+
 template <typename T>
 class forward_list
 {
 private:
     struct node;
-    using node_ptr = std::unique_ptr<node>; 
-    using node_raw_ptr = node *;
+    using node_ptr     = std::unique_ptr<node>;         // smart pointer pointing to node
+    using node_raw_ptr = node *;                        // raw pointer pointing to node
     
     struct node 
     {
         node( const T &value, node_ptr &&next ) 
             : value_( value ), next_( std::move( next ) )
-        {  }
+        {  
+        }
 
         node( T &&value, node_ptr &&next ) 
             : value_( std::move( value ) ), next_( std::move( next ) ) 
-        {  }
+        {
+        }
 
         explicit node( const T &value = T{} ) 
             : value_( value ), next_( nullptr ) 
-        {  }
+        {
+        }
         
         node( const node & ) = delete;
         node &operator=( const node & ) = delete;
@@ -73,17 +78,17 @@ private:
     };
 
 public:
-    using value_type = T;
-    using pointer = T*;
-    using const_pointer = const T*;
-    using reference = T&;
-    using const_reference = const T&;
-    using size_type = std::size_t;
-    using difference_type = std::ptrdiff_t;
+    using value_type        = T;
+    using pointer           = T*;
+    using const_pointer     = const T*;
+    using reference         = T&;
+    using const_reference   = const T&;
+    using size_type         = std::size_t;
+    using difference_type   = std::ptrdiff_t;
 
     class const_iterator
     {
-        friend class forward_list<T>;
+        friend class forward_list;
     public:
         using value_type = T;
         using pointer = const T*;
@@ -93,69 +98,81 @@ public:
         
         const_iterator() noexcept
             : ptr_( nullptr ) 
-        {  }
+        {  
+        }
 
-        reference operator*() const { 
+        reference operator*() const
+        { 
             return ptr_->value_;
         }
 
-        pointer operator->() const {
+        pointer operator->() const
+        {
             return &( operator*() );
         }
         
-        const_iterator &operator++() {
+        const_iterator &operator++() 
+        {
             ptr_ = get_raw( ptr_->next_ );
             return *this;
         }
 
-        const_iterator operator++(int) {
+        const_iterator operator++(int) 
+        {
             auto tmp = *this;
             ++*this;
             return tmp;
         }
 
-        bool operator==( const const_iterator &other ) const noexcept {
+        bool operator==( const const_iterator &other ) const noexcept 
+        {
             return ptr_ == other.ptr_;
         }
         
-        bool operator!=( const const_iterator &other ) const noexcept {
+        bool operator!=( const const_iterator &other ) const noexcept 
+        {
             return ptr_ != other.ptr_;
         }
 
     protected:
         const_iterator( node_raw_ptr ptr ) noexcept
             : ptr_( ptr )
-        {  }
+        { 
+        }
 
         node_raw_ptr ptr_;
     };
 
     class iterator : public const_iterator
     {
-        friend class forward_list<T>;
+        friend class forward_list;
     public:
-        using value_type = T;
-        using pointer = T*;
-        using reference = T&;
-        using difference_type = std::ptrdiff_t;
-        using iterator_category = std::forward_iterator_tag;
+        using value_type          = T;
+        using pointer             = T*;
+        using reference           = T&;
+        using difference_type     = std::ptrdiff_t;
+        using iterator_category   = std::forward_iterator_tag;
         
         iterator() noexcept = default;
 
-        reference operator*() const { 
+        reference operator*() const 
+        { 
             return this->ptr_->value_;
         }
 
-        pointer operator->() const {
+        pointer operator->() const 
+        {
             return &( operator*() );
         }
         
-        iterator &operator++() {
+        iterator &operator++() 
+        {
             this->ptr_ = get_raw( this->ptr_->next_ );
             return *this;
         }
 
-        iterator operator++(int) {
+        iterator operator++(int) 
+        {
             auto tmp = *this;
             ++*this;
             return tmp;
@@ -170,40 +187,47 @@ public:
     protected:
         iterator( node_raw_ptr ptr ) noexcept
             : const_iterator( ptr )
-        {  }
+        { 
+        }
     };
 
 private:
-    node_ptr head_ = make_unique<node>();     // dummy node
-    size_type size_ = 0;
+    node_ptr   head_  = make_unique<node>();     // dummy node
+    size_type  size_  = 0;                       // number of nodes
 
 public:
     forward_list() = default;             
     
     explicit forward_list( size_type n ) 
         : forward_list( n, value_type() )
-    {  }
+    {  
+    }
 
-    forward_list( size_type n, const value_type &value ) {
+    forward_list( size_type n, const value_type &value )
+    {
         insert_after( cbefore_begin(), n, value );
     }
 
     template <class InputIterator, typename = RequireInputIterator<InputIterator>>
-    forward_list( InputIterator first, InputIterator last ) {
+    forward_list( InputIterator first, InputIterator last ) 
+    {
         insert_after( cbefore_begin(), first, last );
     }
 
     forward_list( const forward_list &other ) 
         : forward_list( other.cbegin(), other.cend() )
-    {  }
+    { 
+    }
 
-    forward_list( forward_list &&other ) noexcept {
+    forward_list( forward_list &&other ) noexcept 
+    {
         swap( other );
     }
 
     forward_list( std::initializer_list<value_type> lst ) 
         : forward_list( lst.begin(), lst.end() ) 
-    {  }
+    { 
+    }
     
     /**
        call head_'s destructor, all nodes' memory will be free 
@@ -213,123 +237,151 @@ public:
     /**
        can handle the problem of self-assignment, see C++ Primer 5th section 13.3
     **/
-    forward_list &operator=( const forward_list &other ) {
+    forward_list &operator=( const forward_list &other ) 
+    {
         auto copy = other;
         swap( copy );
         return *this;
     }
 
-    forward_list &operator=( forward_list &&other ) noexcept {
-        if( this != &other ) {
+    forward_list &operator=( forward_list &&other ) noexcept 
+    {
+        if( this != &other ) 
+        {
             clear();
             swap( other );
         }
         return *this;
     }
 
-    forward_list &operator=( std::initializer_list<value_type> lst ) {
+    forward_list &operator=( std::initializer_list<value_type> lst ) 
+    {
         assign( lst.begin(), lst.end() );
         return *this;
     }
     
-    void push_front( const value_type &value ) {
+    void push_front( const value_type &value )
+    {
         auto copy = value;
         push_front( std::move( copy ) );
     }
 
-    void push_front( value_type &&value ) {
+    void push_front( value_type &&value ) 
+    {
         emplace_front( std::move( value ) );
     }
 
     template <class... Args>
-    void emplace_front( Args&&... args ) {
+    void emplace_front( Args&&... args ) 
+    {
         emplace_after( cbefore_begin(), std::forward<Args>(args)... );
     }
 
-    size_type size() const noexcept {
+    size_type size() const noexcept 
+    {
         return size_;
     }
 
-    bool empty() const noexcept {
+    bool empty() const noexcept 
+    {
         return size_ == 0;
     }
 
-    void pop_front() {
-        if( empty() ) {
+    void pop_front() 
+    {
+        if( empty() ) 
+        {
             throw forward_list_exception( "forward_list::pop_front(): forward_list is empty!" );
         }
         erase_after( cbefore_begin() );
     }
     
-    reference front() {
-        if( empty() ) {
+    reference front() 
+    {
+        if( empty() ) 
+        {
             throw forward_list_exception( "forward_list::front(): forward_list is empty!" );
         }
         return *begin();
     }
 
-    const_reference front() const {
+    const_reference front() const 
+    {
         return const_cast<forward_list *>( this )->front();
     }
 
-    iterator before_begin() noexcept {
+    iterator before_begin() noexcept 
+    {
         return { get_raw( head_ ) };
     }
 
-    const_iterator before_begin() const noexcept {
+    const_iterator before_begin() const noexcept 
+    {
         return { get_raw( head_ ) };
     }
 
-    iterator begin() noexcept {
+    iterator begin() noexcept 
+    {
         return { get_raw( head_->next_ ) };
     }
 
-    const_iterator begin() const noexcept {
+    const_iterator begin() const noexcept 
+    {
         return { get_raw( head_->next_ ) };
     }
 
-    iterator end() noexcept {
+    iterator end() noexcept 
+    {
         return { };
     }
 
-    const_iterator end() const noexcept {
+    const_iterator end() const noexcept 
+    {
         return { };
     }
 
-    const_iterator cbefore_begin() const noexcept {
+    const_iterator cbefore_begin() const noexcept 
+    {
         return before_begin();
     }
 
-    const_iterator cbegin() const noexcept {
+    const_iterator cbegin() const noexcept 
+    {
         return begin();
     }
 
-    const_iterator cend() const noexcept {
+    const_iterator cend() const noexcept 
+    {
         return end();
     }
     
     template <typename InputIterator, typename = RequireInputIterator<InputIterator>>
-    void assign( InputIterator first, InputIterator last ) {
+    void assign( InputIterator first, InputIterator last ) 
+    {
         clear();
         insert_after( cbefore_begin(), first, last );
     }
 
-    void assign( size_type n, const value_type &value ) {
+    void assign( size_type n, const value_type &value ) 
+    {
         clear();
         insert_after( cbefore_begin(), n, value );
     }
 
-    void assign( std::initializer_list<value_type> lst ) {
+    void assign( std::initializer_list<value_type> lst ) 
+    {
         assign( lst.begin(), lst.end() );
     }
 
-    void swap( forward_list &other ) noexcept {
+    void swap( forward_list &other ) noexcept 
+    {
         using std::swap;
         swap( size_, other.size_ );
         swap( head_, other.head_ );
     }
 
-    void clear() noexcept {
+    void clear() noexcept 
+    {
         head_->next_ = nullptr;
         size_ = 0;
     }
@@ -341,10 +393,12 @@ public:
     iterator erase_after( const_iterator position ) 
     {
         auto ptr = position.ptr_;
-        if( !ptr ) {
+        if( !ptr ) 
+        {
             throw forward_list_exception( "forward_list::erase_after(): can't erase element after an off-the-end iterator" );   
         }
-        if( !ptr->next_ ) {
+        if( !ptr->next_ ) 
+        {
             throw forward_list_exception( "forward_list::erase_after(): no element after the specify iterator" );   
         }
 
@@ -362,19 +416,22 @@ public:
     {
         // if range ( position, last ) is empty, then we just return 
         auto pos = position;
-        if( ++pos == last ) {
+        if( ++pos == last ) 
+        {
             return to_non_const( last );
         }
         
         auto next_erased = erase_after( position );
-        while( next_erased != last ) {
+        while( next_erased != last ) 
+        {
             next_erased = erase_after( position );
         }
 
         return to_non_const( last );
     }
 
-    iterator insert_after( const_iterator position, const value_type &value ) {
+    iterator insert_after( const_iterator position, const value_type &value ) 
+    {
         auto copy = value;
         return insert_after( position, std::move( copy ) );
     }
@@ -383,8 +440,10 @@ public:
         insert value after position and return iterator pointing to the new element
         if position is an off-the-end iterator, then throw exception
     **/
-    iterator insert_after( const_iterator position, value_type &&value ) {
-        if( position == cend() ) {
+    iterator insert_after( const_iterator position, value_type &&value ) 
+	{
+        if( position == cend() ) 
+        {
             throw forward_list_exception( "forward_list::insert_after(): can't insert element after an off-the-end iterator" );
         }
         return emplace_after( position, std::move( value ) );
@@ -394,8 +453,10 @@ public:
        insert n values after position and return iterator pointing to the last inserted element
        if position is an off-the-end iterator, then throw exception
     **/
-    iterator insert_after( const_iterator position, size_type n, const value_type &value ) {   
-        for( size_type i = 0; i < n; ++i ) {
+    iterator insert_after( const_iterator position, size_type n, const value_type &value ) 
+	{   
+        for( size_type i = 0; i < n; ++i ) 
+        {
             position = insert_after( position, value );
         }
 
@@ -407,21 +468,26 @@ public:
        if position is an off-the-end iterator, then throw exception
     **/
     template<typename InputIterator, typename = RequireInputIterator<InputIterator>>
-    iterator insert_after( const_iterator position, InputIterator first, InputIterator last ) {
-        for( auto iter = first; iter != last; ++iter ) {
+    iterator insert_after( const_iterator position, InputIterator first, InputIterator last ) 
+	{
+        for( auto iter = first; iter != last; ++iter ) 
+        {
             position = insert_after( position, *iter );
         }
         
         return to_non_const( position );
     }
 
-    iterator insert_after( const_iterator position, std::initializer_list<value_type> lst ) {
+    iterator insert_after( const_iterator position, std::initializer_list<value_type> lst ) 
+    {
         return insert_after( position, lst.begin(), lst.end() );
     }
 
     template <class... Args>
-    iterator emplace_after( const_iterator position, Args&&... args ) {
-        if( position == cend() ) {
+    iterator emplace_after( const_iterator position, Args&&... args ) 
+    {
+        if( position == cend() ) 
+        {
             throw forward_list_exception( "forward_list::emplace_after(): can't emplace element after an off-the-end iterator" );
         }
 
@@ -432,7 +498,8 @@ public:
         return to_non_const( ++position );        
     }
 
-    void resize( size_type new_size ) {
+    void resize( size_type new_size ) 
+    {
         resize( new_size, value_type() );
     }
     
@@ -453,23 +520,30 @@ public:
         }
     }
 
-    void remove( const value_type &value ) {
+    void remove( const value_type &value ) 
+    {
         remove_if( [&value]( const value_type &elem ) {  return elem == value;  } );
     }
 
     template <class Predicate>
-    void remove_if( Predicate pred ) {
-        if( empty() ) {
+    void remove_if( Predicate pred ) 
+    {
+        if( empty() ) 
+        {
             return;
         }        
         auto previous = cbefore_begin();
         auto current = begin();
         auto last = end();
         
-        while( current != last ) {
-            if( pred( *current ) ) {
+        while( current != last ) 
+        {
+            if( pred( *current ) ) 
+            {
                 current = erase_after( previous );
-            } else {
+            } 
+            else 
+            {
                 ++previous;
                 ++current;
             }
@@ -478,7 +552,8 @@ public:
 
     void reverse() noexcept 
     {
-        if( size() < 2 ) { 
+        if( size() < 2 ) 
+        { 
             return; 
         }
         node_ptr previous;
@@ -495,14 +570,16 @@ public:
         head_->next_ = std::move( previous );
     }
 
-    void unique() {
+    void unique() 
+    {
         unique( std::equal_to<value_type>() );
     }
 
     template <typename BinaryPredicate>
     void unique( BinaryPredicate binary_pred ) 
     {
-        if( size_ < 2 ) {
+        if( size_ < 2 ) 
+        {
             return;
         }
 
@@ -513,24 +590,30 @@ public:
         ++current;
         while( current != last ) 
         {
-            if( binary_pred( *previous, *current ) ) {
+            if( binary_pred( *previous, *current ) ) 
+            {
                 current = erase_after( previous );
-            } else {
+            } 
+            else 
+            {
                 ++previous;
                 ++current;
             }
         }
     }
 
-    void splice_after( const_iterator position, forward_list &other ) {
+    void splice_after( const_iterator position, forward_list &other ) 
+    {
         splice_after( position, std::move( other ) );
     }
 
-    void splice_after( const_iterator position, forward_list &&other ) {
+    void splice_after( const_iterator position, forward_list &&other ) 
+    {
         splice_after( position, other, other.cbefore_begin(), other.cend() );
     }
     
-    void splice_after( const_iterator position, forward_list &other, const_iterator i ) {
+    void splice_after( const_iterator position, forward_list &other, const_iterator i ) 
+    {
         splice_after( position, std::move( other ), i );
     }
 
@@ -538,12 +621,14 @@ public:
        moves the element behind iterator i in other right after position of this forward list
        two forward_list may be identical
     **/
-    void splice_after( const_iterator position, forward_list &&other, const_iterator i ) {
+    void splice_after( const_iterator position, forward_list &&other, const_iterator i ) 
+    {
         // in the case two forward_list are identical
         // if position and i are equal or i just before position, then do nothing   
         auto iter = i;
         ++iter;
-        if( position == i || position == iter ) {
+        if( position == i || position == iter ) 
+        {
             return;
         }
 
@@ -553,8 +638,8 @@ public:
         return splice_after( position, std::move( other ), first, last );
     }
     
-    void splice_after( const_iterator position, forward_list &other,
-                       const_iterator first, const_iterator last ) {
+    void splice_after( const_iterator position, forward_list &other, const_iterator first, const_iterator last ) 
+    {
         return splice_after( position, std::move( other ), first, last );
     }
 
@@ -563,8 +648,7 @@ public:
        in other right after position of this forward_list 
        two forward_list may be identical
      **/
-    void splice_after( const_iterator position, forward_list &&other, 
-                       const_iterator first, const_iterator last ) 
+    void splice_after( const_iterator position, forward_list &&other, const_iterator first, const_iterator last ) 
     {
         if( position == cend() ) 
         {
@@ -574,7 +658,8 @@ public:
         size_type length = std::distance( first, last );
 
         // if range ( first, last ) doesn't contains any element, then just return
-        if( length < 2 ) {
+        if( length < 2 )
+        {
             return;
         }
 
@@ -594,23 +679,28 @@ public:
         before_last.ptr_->next_ = std::move( remain );
     }
 
-    void print( std::ostream &os = std::cout, const std::string &delim = " " ) const {
-        for( const auto &elem : *this ) {
+    void print( std::ostream &os = std::cout, const std::string &delim = " " ) const 
+    {
+        for( const auto &elem : *this ) 
+        {
             os << elem << delim;
         }
         os << std::endl;
     }
 
-    void merge( forward_list &other ) {
+    void merge( forward_list &other ) 
+    {
         merge( std::move( other ) );
     }
 
-    void merge( forward_list &&other ) {
+    void merge( forward_list &&other ) 
+    {
         merge( std::move( other ), std::less<value_type>() );
     }
     
     template <typename Comp> 
-    void merge( forward_list &other, Comp comp ) {
+    void merge( forward_list &other, Comp comp ) 
+    {
         merge( std::move( other ), comp );
     }
     
@@ -627,7 +717,8 @@ public:
         head_->next_ = merge( head_->next_, other.head_->next_, comp );
     }
 
-    void sort() {
+    void sort() 
+    {
         sort( std::less<value_type>() );
     }
 
@@ -635,7 +726,8 @@ public:
        sort forward_list using merge sort
      **/
     template <typename Compare>
-    void sort( Compare comp ) {
+    void sort( Compare comp ) 
+    {
         head_->next_ = merge_sort( head_->next_, comp );
     }
 
@@ -643,11 +735,13 @@ private:
     /**
        get the raw pointer in unique_ptr
      **/
-    static node_raw_ptr get_raw( const node_ptr &ptr ) noexcept {
+    static node_raw_ptr get_raw( const node_ptr &ptr ) noexcept 
+    {
         return ptr.get();
     }
 
-    iterator to_non_const( const_iterator iter ) noexcept {
+    iterator to_non_const( const_iterator iter ) noexcept 
+    {
         return { iter.ptr_ };
     }
 
@@ -658,7 +752,8 @@ private:
     node_ptr merge_sort( node_ptr &lst, Compare comp ) 
     {
         // if lst is empty or contains only one element, then it is already sorted
-        if( lst == nullptr || lst->next_ == nullptr ) {
+        if( lst == nullptr || lst->next_ == nullptr ) 
+        {
             return std::move( lst );
         }
         
@@ -706,9 +801,12 @@ private:
             }
         }
         
-        if( left ) {
+        if( left ) 
+        {
             current->next_ = std::move( left );
-        } else {
+        } 
+        else 
+        {
             current->next_ = std::move( right );            
         }
         
@@ -716,51 +814,64 @@ private:
     }
 
 public:
-    bool operator==( const forward_list &other ) const noexcept {
-        if( this == &other ) {    // the same forward_list
+    bool operator==( const forward_list &other ) const noexcept 
+    {
+        if( this == &other ) 
+        {    // the same forward_list
             return true;
         }
-        if( size_ != other.size_ ) {
+        if( size_ != other.size_ ) 
+        {
+
             return false;
         }
 
         return mystl::equal( cbegin(), cend(), other.cbegin() );
     }
 
-    bool operator!=( const forward_list &other ) const noexcept {
+    bool operator!=( const forward_list &other ) const noexcept 
+    {
         return !(*this == other);
     }
 
-    bool operator<( const forward_list &other ) const noexcept {
+    bool operator<( const forward_list &other ) const noexcept 
+    {
         return std::lexicographical_compare( cbegin(), cend(), other.cbegin(), other.cend() );
     }
     
-    bool operator>( const forward_list &other ) const noexcept {
+    bool operator>( const forward_list &other ) const noexcept 
+    {
         return other < *this;
     }
     
-    bool operator>=( const forward_list &other ) const noexcept {
+    bool operator>=( const forward_list &other ) const noexcept 
+    {
         return !( *this < other );
     }
 
-    bool operator<=( const forward_list &other ) const noexcept {
+    bool operator<=( const forward_list &other ) const noexcept 
+    {
         return !( other < *this );
     }
 };
 
 template <typename T>
-inline void swap( forward_list<T> &left, forward_list<T> &right ) noexcept {
+inline void swap( forward_list<T> &left, forward_list<T> &right ) noexcept 
+{
     left.swap( right );
 }
 
 template <typename T>
-inline std::ostream &operator<<( std::ostream &os, const forward_list<T> &lst ) {
+inline std::ostream &operator<<( std::ostream &os, const forward_list<T> &lst ) 
+{
     for( const auto &elem : lst ) {
         os << elem << " ";
     }
     return os;
 }
 
+
 };    // end of namespace mystl
+
 
 #endif /* _FORWARD_LIST_H_ */
