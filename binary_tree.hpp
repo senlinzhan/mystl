@@ -15,6 +15,7 @@
 
 #include "memory.hpp"
 #include "iterator.hpp"
+#include <stack>
 #include <functional>
 #include <iostream>
 
@@ -39,19 +40,18 @@ template <typename T, typename Comp = std::less<T>>
 class binary_tree
 {
 public:
-    using value_type = T;
-    using pointer = T*;
-    using const_pointer = const T*;
-    using reference = T&;
+    using value_type      = T;
+    using pointer         = T*;
+    using const_pointer   = const T*;
+    using reference       = T&;
     using const_reference = const T&;
-    using size_type = std::size_t;
+    using size_type       = std::size_t;
     using difference_type = std::ptrdiff_t;
 
 private:
     struct node;
-    using node_ptr = std::unique_ptr<node>; 
+    using node_ptr     = std::unique_ptr<node>; 
     using node_raw_ptr = node *;
-    using node_path = std::shared_ptr<mystl::vector<node_raw_ptr>>;   // for record node path
 
     struct node 
     {
@@ -80,19 +80,18 @@ private:
 
 public:
 
-    // bidirectional const_iterator
     class const_iterator
     {
-        friend class binary_tree<T, Comp>;
+        friend class binary_tree;
     public:
         using value_type = T;
         using pointer = const T*;
         using reference = const T&;
         using difference_type = std::ptrdiff_t;
-        using iterator_category = std::bidirectional_iterator_tag;
+        using iterator_category = std::input_iterator_tag;
         
         reference operator*() const { 
-            return ( path_->operator[]( index_ ) )->value_;
+            return stack_.top()->value_;
         }
 
         pointer operator->() const {
@@ -100,6 +99,19 @@ public:
         }
         
         const_iterator &operator++() noexcept {
+            auto cur = stack_.top();
+            stack_.pop();
+
+            cur = get_raw( cur->right_ );
+            if( cur != nullptr ) {
+                stack_.push( cur );
+                cur = get_raw( cur->left_ );
+                while( cur != nullptr ) {
+                    stack_.push( cur );
+                    cur = get_raw( cur->left_ );
+                }
+            }
+            
             ++index_;
             return *this;
         }
@@ -107,17 +119,6 @@ public:
         const_iterator operator++(int) noexcept {
             auto tmp = *this;
             ++*this;
-            return tmp;
-        }
-
-        const_iterator &operator--() noexcept {
-            --index_;
-            return *this;
-        }
-
-        const_iterator operator--(int) noexcept {
-            auto tmp = *this;
-            --*this;
             return tmp;
         }
         
@@ -130,30 +131,32 @@ public:
         }
 
     protected:
-        // only binary_tree can access this constructor
-        const_iterator( const binary_tree *tree, size_type index, node_path path = nullptr )
-            : tree_( tree ), index_( index ), path_( path ) 
-        {  }
+        const_iterator( const binary_tree *tree, bool end ) 
+            : tree_( tree )
+        {
+            if( end || tree->size() == 0 ) {
+                index_ = tree->size();
+            } else {
+                index_ = 0;
+                auto cur = get_raw( tree->root_ );
+                while( cur ) {
+                    stack_.push( cur );
+                    cur = get_raw( cur->left_ );
+                }
+            }
+        }
 
-        const binary_tree *tree_;
-        size_type index_;
-        node_path path_;
+        const binary_tree          *tree_;
+        size_type                  index_;
+        std::stack<node_raw_ptr>   stack_;
     };
 
-    // iterator is same as const_iterator
-    // because we don't want user modify element by using iterator
-    class iterator : public const_iterator 
-    {
-        friend class binary_tree<T, Comp>;
-    protected:
-        iterator( const binary_tree *tree, size_type index, node_path path = nullptr )
-            : const_iterator( tree, index, path )
-        {  }        
-    };    
-
-    using reverse_iterator = std::reverse_iterator<iterator>;
-    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-
+    /**
+       iterator is same as const_iterator
+       because we don't want user modify element by using iterator
+    **/
+    using iterator = const_iterator;
+    
 private:
     Comp less_;                           // for compare elements
     node_ptr root_;                       // point to root node
@@ -308,30 +311,7 @@ public:
 
     // linear time operation
     iterator begin() {
-        auto path = get_path();            // path contains all nodes' raw pointer
-        return { this, 0, path };
-    }
-
-    // linear time operation
-    reverse_iterator rbegin() {
-        auto path = get_path();
-        iterator last( this, size(), path );
-        return reverse_iterator( last );
-    }
-
-    const_reverse_iterator rbegin() const {
-        return const_cast<binary_tree *>( this )->rbegin();
-    }
-
-    // constant time operation
-    reverse_iterator rend() noexcept {
-        iterator first( this, 0, nullptr );
-        return reverse_iterator( first );
-    }
-
-    // constant time operation
-    const_reverse_iterator rend() const noexcept {
-        return const_cast<binary_tree *>( this )->rend();
+        return { this, false };
     }
 
     // linear time operation
@@ -341,7 +321,7 @@ public:
 
     // constant time operation
     iterator end() noexcept {
-        return { this, size(), nullptr };
+        return { this, true };
     }
 
     // constant time operation
@@ -358,16 +338,6 @@ public:
     const_iterator cend() const noexcept {
         return end();
     }    
-    
-    // linear time operation
-    const_reverse_iterator crbegin() const {
-        return rbegin();
-    }
-
-    // constant time operation
-    const_reverse_iterator crend() const noexcept {
-        return rend();
-    }
 
     size_type size() const noexcept {
         return size_;
@@ -402,6 +372,7 @@ public:
     }
 
     void print( std::ostream &os = std::cout, const std::string &delim = " " ) const {
+        
         for( const auto &elem : *this ) {
             os << elem << delim;
         }
@@ -480,7 +451,7 @@ private:
         return max;
     }
 
-    node_raw_ptr get_raw( const node_ptr &ptr ) const noexcept {
+    static node_raw_ptr get_raw( const node_ptr &ptr ) noexcept {
         return ptr.get();
     }
 
@@ -490,21 +461,6 @@ private:
         } else {
             return make_unique<node>( r->value_, clone_tree( r->left_ ), clone_tree( r->right_ ) );   
         }
-    }
-
-    node_path get_path() const {
-        auto path = std::make_shared<mystl::vector<node_raw_ptr>>();
-        fill_path( path, root_ );
-        return path;
-    }
-
-    void fill_path( node_path &path, const node_ptr &ptr ) const {
-        if( !ptr ) {
-            return;
-        }
-        fill_path( path, ptr->left_ );
-        path->push_back( get_raw( ptr ) );
-        fill_path( path, ptr->right_ );
     }
 
 public:
@@ -531,7 +487,7 @@ void swap( binary_tree<T, Comp> &first, binary_tree<T, Comp> &second ) noexcept 
 
 template <typename T, typename Comp>
 std::ostream &operator<<( std::ostream &os, const binary_tree<T, Comp> &tree ) {
-    tree.print( os, " " );
+    tree.print( os );
     return os;
 }
 

@@ -1,3 +1,12 @@
+/***
+    散列表
+        1. 引入异常，对于不合法的操作会抛出异常
+
+    版本 1.0
+    作者：詹春畅
+    博客：senlinzhan.github.io
+ ***/
+
 #ifndef _UNORDERED_SET_H_
 #define _UNORDERED_SET_H_
 
@@ -175,6 +184,7 @@ public:
     unordered_set( const unordered_set &other ) {
         buckets_ = other.bucket_;
         size_ = other.size_;
+        max_load_factor_ = other.max_load_factor_;
     }
 
     unordered_set( unordered_set &&other ) noexcept {
@@ -207,6 +217,8 @@ public:
     void swap( unordered_set &other ) noexcept {
         using std::swap;
         swap( buckets_, other.buckets_ );
+        swap( size_, other.size_ );
+        swap( max_load_factor_, other.max_load_factor_ );
     }
 
     size_type bucket_count() const noexcept {
@@ -238,10 +250,8 @@ public:
     }
 
     void print( std::ostream &os = std::cout, const std::string &delim = " " ) const {
-        for( const auto &lst : buckets_ ) {
-            for( const auto &elem : lst ) {
-                os << elem << delim;
-            }
+        for( const auto &elem : *this ) {
+            os << elem << delim;            
         }
     }
     

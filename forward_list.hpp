@@ -95,20 +95,20 @@ public:
             : ptr_( nullptr ) 
         {  }
 
-        reference operator*() const noexcept { 
+        reference operator*() const { 
             return ptr_->value_;
         }
 
-        pointer operator->() const noexcept {
+        pointer operator->() const {
             return &( operator*() );
         }
         
-        const_iterator &operator++() noexcept {
+        const_iterator &operator++() {
             ptr_ = get_raw( ptr_->next_ );
             return *this;
         }
 
-        const_iterator operator++(int) noexcept {
+        const_iterator operator++(int) {
             auto tmp = *this;
             ++*this;
             return tmp;
@@ -142,20 +142,20 @@ public:
         
         iterator() noexcept = default;
 
-        reference operator*() const noexcept { 
+        reference operator*() const { 
             return this->ptr_->value_;
         }
 
-        pointer operator->() const noexcept {
+        pointer operator->() const {
             return &( operator*() );
         }
         
-        iterator &operator++() noexcept {
+        iterator &operator++() {
             this->ptr_ = get_raw( this->ptr_->next_ );
             return *this;
         }
 
-        iterator operator++(int) noexcept {
+        iterator operator++(int) {
             auto tmp = *this;
             ++*this;
             return tmp;
