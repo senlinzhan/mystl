@@ -31,9 +31,11 @@ class forward_list_exception : public std::exception
 public:
     explicit forward_list_exception( const std::string &message ) 
         : message_( message )
-        {  }
+    {
+    }
     
-    virtual const char * what() const noexcept override {
+    virtual const char * what() const noexcept override 
+    {
         return message_.c_str();
     }
     
@@ -453,8 +455,8 @@ public:
        insert n values after position and return iterator pointing to the last inserted element
        if position is an off-the-end iterator, then throw exception
     **/
-    iterator insert_after( const_iterator position, size_type n, const value_type &value ) 
-	{   
+    iterator insert_after( const_iterator position, size_type n, const value_type &value )
+    {   
         for( size_type i = 0; i < n; ++i ) 
         {
             position = insert_after( position, value );
@@ -468,8 +470,8 @@ public:
        if position is an off-the-end iterator, then throw exception
     **/
     template<typename InputIterator, typename = RequireInputIterator<InputIterator>>
-    iterator insert_after( const_iterator position, InputIterator first, InputIterator last ) 
-	{
+    iterator insert_after( const_iterator position, InputIterator first, InputIterator last )
+    {
         for( auto iter = first; iter != last; ++iter ) 
         {
             position = insert_after( position, *iter );
