@@ -349,8 +349,11 @@ public:
         ++size_;
     }
 
-
-    void clear()
+    /**
+       we assume value_type's destructor will not throw exception
+       so clear() is noexcept
+    **/
+    void clear() noexcept
     {
         root_ = nullptr;
         size_ = 0;
