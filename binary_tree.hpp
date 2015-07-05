@@ -15,7 +15,7 @@
 
 #include "memory.hpp"
 #include "iterator.hpp"
-#include <stack>
+#include "stack.hpp"
 #include <functional>
 #include <iostream>
 
@@ -164,9 +164,9 @@ public:
             }
         }
 
-        const binary_tree          *tree_;
-        size_type                  index_;
-        std::stack<node_raw_ptr>   stack_;
+        const binary_tree            *tree_;
+        size_type                    index_;
+        mystl::stack<node_raw_ptr>   stack_;
     };
 
     /**
