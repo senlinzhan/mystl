@@ -54,8 +54,8 @@ public:
 
 private:
     struct node;
-    using node_ptr     = std::unique_ptr<node>; 
-    using node_raw_ptr = node *;
+    using node_ptr        = std::unique_ptr<node>; 
+    using node_raw_ptr    = node *;
 
     struct node 
     {
@@ -91,11 +91,11 @@ public:
     {
         friend class binary_tree;
     public:
-        using value_type = T;
-        using pointer = const T*;
-        using reference = const T&;
-        using difference_type = std::ptrdiff_t;
-        using iterator_category = std::input_iterator_tag;
+        using value_type          = T;
+        using pointer             = const T*;
+        using reference           = const T&;
+        using difference_type     = std::ptrdiff_t;
+        using iterator_category   = std::input_iterator_tag;
         
         reference operator*() const
         { 
