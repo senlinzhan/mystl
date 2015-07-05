@@ -12,11 +12,11 @@
 #define _STACK_H_
 
 #include "vector.hpp"
-#include <vector>
 #include <exception>
 #include <string>
 
 namespace mystl {
+
 
 class stack_exception : public std::exception
 {
@@ -34,6 +34,7 @@ public:
 private:
     std::string message_;
 };
+
 
 template <typename T, typename Container = mystl::vector<T>>
 class stack
