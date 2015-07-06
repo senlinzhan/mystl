@@ -16,10 +16,12 @@
 #include "memory.hpp"
 #include "iterator.hpp"
 #include "stack.hpp"
+#include "algorithm.hpp"
 #include <string>
 #include <exception>
 #include <functional>
 #include <iostream>
+#include <initializer_list>        
 
 namespace mystl {
 
@@ -567,6 +569,26 @@ public:
     bool operator!=( const binary_tree &other ) const
     {
         return !(*this == other);
+    }
+
+    bool operator<( const binary_tree &other ) const noexcept 
+    {
+        return std::lexicographical_compare( cbegin(), cend(), other.cbegin(), other.cend() );
+    }
+    
+    bool operator>( const binary_tree &other ) const noexcept 
+    {
+        return other < *this;
+    }
+    
+    bool operator>=( const binary_tree &other ) const noexcept 
+    {
+        return !( *this < other );
+    }
+
+    bool operator<=( const binary_tree &other ) const noexcept 
+    {
+        return !( other < *this );
     }
 };
 

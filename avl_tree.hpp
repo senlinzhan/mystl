@@ -12,14 +12,15 @@
 #ifndef _AVL_TREE_H_
 #define _AVL_TREE_H_
 
+#include "stack.hpp"
+#include "memory.hpp"
+#include "algorithm.hpp"
+#include "iterator.hpp"
 #include <string>
 #include <exception>
 #include <iostream>
 #include <functional>
 #include <initializer_list>        
-#include "stack.hpp"
-#include "memory.hpp"
-#include "algorithm.hpp"
 
 namespace mystl {
 
@@ -651,6 +652,27 @@ public:
     {
         return !(*this == other);
     }
+
+    bool operator<( const avl_tree &other ) const noexcept 
+    {
+        return std::lexicographical_compare( cbegin(), cend(), other.cbegin(), other.cend() );
+    }
+    
+    bool operator>( const avl_tree &other ) const noexcept 
+    {
+        return other < *this;
+    }
+    
+    bool operator>=( const avl_tree &other ) const noexcept 
+    {
+        return !( *this < other );
+    }
+
+    bool operator<=( const avl_tree &other ) const noexcept 
+    {
+        return !( other < *this );
+    }
+
 };
 
 template <typename T, typename Comp>
