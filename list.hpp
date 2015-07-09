@@ -238,7 +238,7 @@ public:
         insert( cend(), n, value );
     }
 
-    template <class InputIterator, typename = RequireInputIterator<InputIterator>>
+    template <class InputIterator, typename = mystl::RequireInputIterator<InputIterator>>
     list( InputIterator first, InputIterator last ) 
     {
         init();
@@ -310,7 +310,7 @@ public:
         insert( cend(), n, value );
     }
 
-    template<typename InputIterator, typename = RequireInputIterator<InputIterator>>
+    template<typename InputIterator, typename = mystl::RequireInputIterator<InputIterator>>
     void assign( InputIterator first, InputIterator last ) 
     {
         clear();
@@ -548,7 +548,7 @@ public:
        inserts a copy of all elements of the range [first, last) before iterator position pos 
        returns the position of the first new element or pos if there is no new element
     **/
-    template<typename InputIterator, typename = RequireInputIterator<InputIterator>> 
+    template<typename InputIterator, typename = mystl::RequireInputIterator<InputIterator>> 
     iterator insert( const_iterator pos, InputIterator first, InputIterator last ) 
     {
         if( first == last ) 

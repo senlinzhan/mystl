@@ -210,7 +210,7 @@ public:
         insert_after( cbefore_begin(), n, value );
     }
 
-    template <class InputIterator, typename = RequireInputIterator<InputIterator>>
+    template <class InputIterator, typename = mystl::RequireInputIterator<InputIterator>>
     forward_list( InputIterator first, InputIterator last ) 
     {
         insert_after( cbefore_begin(), first, last );
@@ -357,7 +357,7 @@ public:
         return end();
     }
     
-    template <typename InputIterator, typename = RequireInputIterator<InputIterator>>
+    template <typename InputIterator, typename = mystl::RequireInputIterator<InputIterator>>
     void assign( InputIterator first, InputIterator last ) 
     {
         clear();
@@ -469,7 +469,7 @@ public:
        insert n values after position and return iterator pointing to the last inserted element
        if position is an off-the-end iterator, then throw exception
     **/
-    template<typename InputIterator, typename = RequireInputIterator<InputIterator>>
+    template<typename InputIterator, typename = mystl::RequireInputIterator<InputIterator>>
     iterator insert_after( const_iterator position, InputIterator first, InputIterator last )
     {
         for( auto iter = first; iter != last; ++iter ) 

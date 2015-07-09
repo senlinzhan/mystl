@@ -190,7 +190,7 @@ public:
     { 
     }
 
-    template <typename InputIterator, typename = RequireInputIterator<InputIterator>>
+    template <typename InputIterator, typename = mystl::RequireInputIterator<InputIterator>>
     binary_tree( InputIterator first, InputIterator last, Comp comp = Comp() ) 
         : less_( comp ) 
     {
@@ -253,7 +253,7 @@ public:
         swap( size_, tree.size_ );
     }
     
-    template<typename InputIterator, typename = RequireInputIterator<InputIterator>>
+    template<typename InputIterator, typename = mystl::RequireInputIterator<InputIterator>>
     void assign( InputIterator first, InputIterator last ) 
     {
         clear();
@@ -291,7 +291,7 @@ public:
         insert( lst.begin(), lst.end() );
     }
 
-    template<typename InputIterator, typename = RequireInputIterator<InputIterator>> 
+    template<typename InputIterator, typename = mystl::RequireInputIterator<InputIterator>> 
     void insert( InputIterator first, InputIterator last ) 
     {
         std::for_each( first, last, [=]( const value_type &elem ) {  insert( elem );  } );

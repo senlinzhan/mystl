@@ -186,7 +186,7 @@ public:
     {  
     }    
 
-    template<typename InputIterator, typename = RequireInputIterator<InputIterator>>
+    template<typename InputIterator, typename = mystl::RequireInputIterator<InputIterator>>
     unordered_set( InputIterator first, InputIterator last, size_type bucket_num = 0, 
                    const hasher &hash = hasher(), const key_equal &equal = key_equal() ) 
         : hash_( hash ), 
@@ -382,7 +382,7 @@ public:
         }
     }
 
-    template<typename InputIterator, typename = RequireInputIterator<InputIterator>>
+    template<typename InputIterator, typename = mystl::RequireInputIterator<InputIterator>>
     void insert( InputIterator first, InputIterator last ) 
 	{
         while( first != last ) 

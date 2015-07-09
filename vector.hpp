@@ -114,7 +114,7 @@ public:
     {  
     }
 
-    template<typename InputIterator, typename = RequireInputIterator<InputIterator>> 
+    template<typename InputIterator, typename = mystl::RequireInputIterator<InputIterator>> 
     vector( InputIterator first, InputIterator last, const allocator_type& alloc = allocator_type() ) 
         : alloc_( alloc )
     {
@@ -162,7 +162,7 @@ public:
         erase( cbegin(), cend() );
     }
 
-    template<typename InputIterator, typename = RequireInputIterator<InputIterator>>
+    template<typename InputIterator, typename = mystl::RequireInputIterator<InputIterator>>
     void assign( InputIterator first, InputIterator last ) 
     {     
         clear_elements();
@@ -465,7 +465,7 @@ public:
        returns the position of the first new element 
        or return the origin iterator if there is no new element ( n equals to zero )
     **/
-    template<typename InputIterator, typename = RequireInputIterator<InputIterator>>
+    template<typename InputIterator, typename = mystl::RequireInputIterator<InputIterator>>
     iterator insert( const_iterator position, InputIterator first, InputIterator last ) 
     {
         auto pos = to_non_const( position );
@@ -609,7 +609,7 @@ private:
     }
 
     // Note: before call this function, you must sure that the container is empty!
-    template <typename InputIterator, typename = RequireInputIterator<InputIterator>>
+    template <typename InputIterator, typename = mystl::RequireInputIterator<InputIterator>>
     void create_elements( InputIterator first, InputIterator last )
     {
         if( first == last ) 
