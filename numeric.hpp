@@ -132,7 +132,7 @@ OutputIterator adjacent_difference( InputIterator first, InputIterator last, Out
 }
 
 template <typename InputIterator, typename OutputIterator, typename BinaryFunction>
-OutputIterator adjacent_difference( InputIterator first, InputIterator last, OutputIterator dest,BinaryFunction binaryFunc )
+OutputIterator adjacent_difference( InputIterator first, InputIterator last, OutputIterator dest, BinaryFunction binaryFunc )
 {
     if( first == last )
     {
