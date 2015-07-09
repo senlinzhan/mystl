@@ -3,6 +3,9 @@
 
 #include <iterator>
 
+namespace mystl {
+
+
 /**
    define five iterator category
  **/
@@ -311,5 +314,7 @@ using RequireRandomIterator = typename std::enable_if<
                         std::random_access_iterator_tag
                         >::value
     >::type;
+
+};
 
 #endif /* _ITERATOR_H_ */
