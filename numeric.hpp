@@ -4,7 +4,7 @@
 namespace mystl {
 
 
-template <typename ForwardIterator, typename T>
+template <typename ForwardIterator, typename T, typename = mystl::RequireInputIterator<InputIterator>>
 inline void iota( ForwardIterator first, ForwardIterator last, T value )
 {
     for( ; first != last; ++first )
@@ -14,7 +14,7 @@ inline void iota( ForwardIterator first, ForwardIterator last, T value )
     }
 }
 
-template <typename InputIterator, typename T>
+template <typename InputIterator, typename T, typename = mystl::RequireInputIterator<InputIterator>>
 inline T accumulate( InputIterator first, InputIterator last, T initValue )
 {
     for( ; first != last; ++first )
@@ -25,8 +25,7 @@ inline T accumulate( InputIterator first, InputIterator last, T initValue )
     return initValue;
 }
 
-
-template <typename InputIterator, typename T, typename BinaryFunction>
+template <typename InputIterator, typename T, typename BinaryFunction, typename = mystl::RequireInputIterator<InputIterator>>
 inline T accumulate( InputIterator first, InputIterator last, T initValue, BinaryFunction binaryFunc )
 {
     for( ; first != last; ++first )
@@ -35,6 +34,7 @@ inline T accumulate( InputIterator first, InputIterator last, T initValue, Binar
     }
     return initValue;
 }
+
 
 template <typename InputIteratorL, typename InputIteratorR, typename T, 
           typename = mystl::RequireInputIterator<InputIteratorL>, typename = mystl::RequireInputIterator<InputIteratorR>>
@@ -49,8 +49,7 @@ inline T inner_product( InputIteratorL firstL, InputIteratorL lastL, InputIterat
 }
 
 
-template <typename InputIteratorL, typename InputIteratorR, typename T, 
-          typename BinaryFunctionL, typename BinaryFunctionR,
+template <typename InputIteratorL, typename InputIteratorR, typename T, typename BinaryFunctionL, typename BinaryFunctionR,
           typename = mystl::RequireInputIterator<InputIteratorL>, typename = mystl::RequireInputIterator<InputIteratorR>>
 inline T inner_product( InputIteratorL firstL, InputIteratorL lastL, InputIteratorR firstR, T initValue, 
                         BinaryFunctionL binaryFuncL, BinaryFunctionR binaryFuncR )
