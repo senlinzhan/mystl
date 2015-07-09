@@ -4,6 +4,10 @@
 #include "iterator.hpp"
 #include <functional>
 
+
+namespace mystl {
+
+
 /**
    Selection sort base on array
  **/
@@ -76,7 +80,75 @@ void selection_sort( ForwardIterator first, ForwardIterator last )
     selection_sort( first, last, std::less<value_type>() );
 }
 
+/**
+   Bubble sort base on array
+ **/
+template <typename T>
+void bubble_sort( T arr[], int size )
+{
+    using std::swap;
+    
+    if( size < 2 )
+    {
+        return;
+    }
+    
+    for( int i = 0; i < size; ++i )
+    {
+        for( int j = 1; j < size - i; ++j )
+        {
+            if( arr[j] < arr[j - 1] )
+            {
+                swap( arr[j], arr[j - 1] );
+            }
+        }
+    }
+}
 
+/**
+   Bubble sort in STL style using the user defined comparator
+   the iterator require at least be forward iterator because we must traverse the container more than once
+ **/
+template <typename ForwardIterator, typename Comp, typename = mystl::RequireForwardIterator<ForwardIterator>>
+void bubble_sort( ForwardIterator first, ForwardIterator last, Comp comp )
+{
+    using std::swap;
+    
+    if( first == last )
+    {
+        return;
+    }
+
+    while( last != first )
+    {
+        auto curr = first;
+        auto next = first;
+        
+        for( ++next; next != last; ++next )
+        {
+            if( comp( *next, *curr ) )
+            {
+                swap( *next, *curr );
+            }
+            curr = next;
+        }
+        last = curr;
+    }
+}
+
+/**
+   Bubble sort in STL style using the default comparator
+   the iterator require at least be forward iterator because we must traverse the container more than once
+ **/
+template <typename ForwardIterator, typename = mystl::RequireForwardIterator<ForwardIterator>>
+void bubble_sort( ForwardIterator first, ForwardIterator last )
+{
+    using value_type = typename mystl::iterator_traits<ForwardIterator>::value_type;
+    bubble_sort( first, last, std::less<value_type>() );
+}
+
+
+};    // namespace mystl
 
 
 #endif /* _SORT_H_ */
