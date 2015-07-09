@@ -14,9 +14,16 @@ My STL
 |优先队列 |![priority_queue.hpp](https://github.com/senlinzhan/mystl/blob/master/priority_queue.hpp)|
 |散列表|![unordered_set.hpp](https://github.com/senlinzhan/mystl/blob/master/unordered_set.hpp)|
 
-| 标准库迭代器 |       文件        |
+| 标准库组件 |       文件        |
 |:-----------:|:-----------------:|
 |   迭代器     |![iterator.hpp](https://github.com/senlinzhan/mystl/blob/master/iterator.hpp)|
+
+| 标准库算法 |       文件        |
+|:-----------:|:-----------------:|
+|堆算法|![heap.hpp](https://github.com/senlinzhan/mystl/blob/master/heap.hpp)|
+|数值算法|![numeric.hpp](https://github.com/senlinzhan/mystl/blob/master/numeric.hpp)|
+|通用算法|![algorithm.hpp](https://github.com/senlinzhan/mystl/blob/master/algorithm.hpp)|
+
 
 ## 自定义容器与算法
 | 自定义容器 |       文件        |
