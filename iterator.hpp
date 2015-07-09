@@ -315,6 +315,6 @@ using RequireRandomIterator = typename std::enable_if<
                         >::value
     >::type;
 
-};
+};    // namespace mystl
 
 #endif /* _ITERATOR_H_ */
