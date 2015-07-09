@@ -1,6 +1,8 @@
 #ifndef _NUMERIC_H_
 #define _NUMERIC_H_
 
+#include "iterator.hpp"
+
 namespace mystl {
 
 
