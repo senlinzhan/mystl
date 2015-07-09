@@ -65,7 +65,7 @@ struct iterator
     using value_type        = T;
     using difference_type   = Distance;
     using pointer           = Pointer;
-    using Reference         = reference;
+    using reference         = Reference;
 };
 
 template <typename Iterator>
@@ -75,6 +75,10 @@ class reverse_iterator : public iterator<typename iterator_traits<Iterator>::ite
                                          typename iterator_traits<Iterator>::pointer,
                                          typename iterator_traits<Iterator>::reference>
 {
+    using difference_type   = typename iterator_traits<Iterator>::difference_type;
+    using pointer           = typename iterator_traits<Iterator>::pointer;
+    using reference         = typename iterator_traits<Iterator>::reference;
+    
 protected:
     Iterator current_;
     
@@ -151,18 +155,18 @@ public:
 
     reverse_iterator& operator+=( difference_type diff )
     {
-        current -= diff;
+        current_ -= diff;
         return *this;
     }
 
     reverse_iterator operator-( difference_type diff ) const
     { 
-        return reverse_iterator( current + diff ); 
+        return reverse_iterator( current_ + diff ); 
     }
 
     reverse_iterator& operator-=( difference_type diff )
     {
-        current += diff;
+        current_ += diff;
         return *this;
     }
 
