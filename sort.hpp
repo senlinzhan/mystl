@@ -147,6 +147,82 @@ void bubble_sort( ForwardIterator first, ForwardIterator last )
     bubble_sort( first, last, std::less<value_type>() );
 }
 
+/**
+   Merge two sorted array
+ **/
+template <typename T>
+void merge( T arr[], T l[], int lsize, T r[], int rsize )
+{
+    int size = lsize + rsize;
+
+    for( int i = 0, j = 0, k = 0; k < size; ++k )
+    {
+        if( i == lsize )
+        {
+            arr[k] = std::move( r[j++] );
+        } 
+        else if( j == rsize )
+        {
+            arr[k] = std::move( l[i++] );
+        }
+        else if( r[j] < l[i] )
+        {
+            arr[k] = std::move( r[j++] );
+        }
+        else 
+        {
+            arr[k] = std::move( r[i++] );
+        }
+    }
+}
+
+/**
+   Merge sort base on array
+ **/
+template <typename T>
+void merge_sort( T arr[], int lo, int hi )
+{
+    // we must sure range [lo, hi] is valid
+    if( hi <= lo )
+    {
+        return;
+    }
+
+    int mid = lo + ( hi - lo ) / 2;
+    
+    auto left  = new T[mid - lo + 1];
+    auto right = new T[hi - mid];
+    
+    int cnt = 0;
+    for( int i = lo; i <= mid; ++i )
+    {
+        left[cnt++] = std::move( arr[i] );
+    }
+
+    cnt = 0;
+    for( int i = mid + 1; i <= hi; ++i )
+    {
+        right[cnt++] = std::move( arr[i] );
+    }
+
+    merge_sort( left, 0, mid - lo );
+    merge_sort( right, 0, hi - mid - 1 );
+    
+    merge( arr, left, mid - lo + 1, right, hi - mid );
+
+    delete[] left;
+    delete[] right;
+}
+
+/**
+   Merge sort base on array
+ **/
+template <typename T>
+void merge_sort( T arr[], int size )
+{
+    merge_sort( arr, 0, size - 1 );
+}
+
 
 };    // namespace mystl
 
