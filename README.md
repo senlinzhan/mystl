@@ -36,3 +36,5 @@ My STL
 |:-------:|:-----------------:|
 |冒泡排序|![sort.hpp](https://github.com/senlinzhan/mystl/blob/master/sort.hpp)|
 |选择排序|![sort.hpp](https://github.com/senlinzhan/mystl/blob/master/sort.hpp)|
+|归并排序|![sort.hpp](https://github.com/senlinzhan/mystl/blob/master/sort.hpp)|
+
