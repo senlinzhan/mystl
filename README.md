@@ -38,4 +38,5 @@ My STL
 |选择排序|![sort.hpp](https://github.com/senlinzhan/mystl/blob/master/sort.hpp)|
 |归并排序|![sort.hpp](https://github.com/senlinzhan/mystl/blob/master/sort.hpp)|
 |快速排序|![sort.hpp](https://github.com/senlinzhan/mystl/blob/master/sort.hpp)|
+|插入排序|![sort.hpp](https://github.com/senlinzhan/mystl/blob/master/sort.hpp)|
 

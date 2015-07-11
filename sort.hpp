@@ -148,6 +148,71 @@ void bubble_sort( ForwardIterator first, ForwardIterator last )
 }
 
 /**
+   Insertion sort base on array
+ **/
+template <typename T>
+void insertion_sort( T arr[], int size )
+{
+    if( size < 2 )
+    {
+        return;
+    }
+
+    for( int i = 1; i < size; ++i )
+    {
+        T value = std::move( arr[i] );
+
+        int j = i;
+        for( ; j > 0 && value < arr[j - 1]; --j )
+        {
+            arr[j] = std::move( arr[j - 1] );
+        }
+        arr[j] = std::move( value );
+    }
+}
+
+/**
+   Insertion sort in STL style using the user defined comparator
+   the iterator require at least be bidirectional iterator because we must traverse the container forth and back
+ **/
+template <typename BidirectionalIterator, typename Comp>
+void insertion_sort( BidirectionalIterator first, BidirectionalIterator last, Comp comp )
+{
+    if( first == last )
+    {
+        return;
+    }
+    
+    auto iter = first;
+    for( ++iter; iter != last; ++iter )
+    {
+        auto value = std::move( *iter );
+        
+        auto curr = iter;
+        auto prev = curr;
+        --prev;
+        
+        for( ; curr != first && comp( value, *prev ); --curr, --prev )
+        {
+            *curr = std::move( *prev );
+        }
+        *curr = std::move( value );
+    }
+}
+
+/**
+   Insertion sort in STL style using the default comparator
+   the iterator require at least be bidirectional iterator because we must traverse the container forth and back
+ **/
+template <typename BidirectionalIterator>
+void insertion_sort( BidirectionalIterator first, BidirectionalIterator last )
+{
+    using value_type = typename mystl::iterator_traits<ForwardIterator>::value_type;
+    insertion_sort( first, last, std::less<value_type>() );
+}
+
+
+/**
    Merge two sorted array
  **/
 template <typename T>
