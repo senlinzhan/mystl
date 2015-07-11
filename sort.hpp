@@ -175,7 +175,7 @@ void insertion_sort( T arr[], int size )
    Insertion sort in STL style using the user defined comparator
    the iterator require at least be bidirectional iterator because we must traverse the container forth and back
  **/
-template <typename BidirectionalIterator, typename Comp>
+template <typename BidirectionalIterator, typename Comp, typename = mystl::RequireBidirectionalIterator<BidirectionalIterator>>
 void insertion_sort( BidirectionalIterator first, BidirectionalIterator last, Comp comp )
 {
     if( first == last )
@@ -204,7 +204,7 @@ void insertion_sort( BidirectionalIterator first, BidirectionalIterator last, Co
    Insertion sort in STL style using the default comparator
    the iterator require at least be bidirectional iterator because we must traverse the container forth and back
  **/
-template <typename BidirectionalIterator>
+template <typename BidirectionalIterator, typename = mystl::RequireBidirectionalIterator<BidirectionalIterator>>
 void insertion_sort( BidirectionalIterator first, BidirectionalIterator last )
 {
     using value_type = typename mystl::iterator_traits<ForwardIterator>::value_type;
