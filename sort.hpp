@@ -236,7 +236,7 @@ void merge( T arr[], T l[], int lsize, T r[], int rsize )
         }
         else 
         {
-            arr[k] = std::move( r[i++] );
+            arr[k] = std::move( l[i++] );
         }
     }
 }
