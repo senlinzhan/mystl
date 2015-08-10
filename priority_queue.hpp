@@ -74,6 +74,8 @@ public:
         mystl::make_heap( container_.begin(), container_.end(), comp_ );
     }
 
+    ~priority_queue() = default;
+    
     bool empty() const 
     {
         return container_.empty();

@@ -1,7 +1,6 @@
 /***
     单向链表
         1. 使用智能指针自动管理内存
-        2. 使用虚析构函数，允许定义 forward_list 的派生类
         3. 引入异常，对于不合法的操作会抛出异常
         4. 不允许使用 allocator 来分配内存
 
@@ -234,7 +233,7 @@ public:
     /**
        call head_'s destructor, all nodes' memory will be free 
     **/
-    virtual ~forward_list() = default;
+    ~forward_list() = default;
 
     /**
        can handle the problem of self-assignment, see C++ Primer 5th section 13.3

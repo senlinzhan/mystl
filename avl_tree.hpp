@@ -256,7 +256,7 @@ public:
     }
 
     // call root_'s destructor, all nodes' memory will be free 
-    virtual ~avl_tree() = default;
+    ~avl_tree() = default;
 
     void swap( avl_tree &tree ) noexcept 
     {

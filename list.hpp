@@ -280,7 +280,7 @@ public:
     }
 
     // call head_'s destructor, all nodes' memory will be free 
-    virtual ~list() = default;
+    ~list() = default;
 
     void swap( list &other ) noexcept 
     {

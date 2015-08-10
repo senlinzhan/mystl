@@ -148,7 +148,7 @@ public:
         assign( lst.begin(), lst.end() );
     }
 
-    virtual ~vector() 
+    ~vector() 
     {
         clear_elements();
     }

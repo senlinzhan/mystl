@@ -60,7 +60,7 @@ public:
     {    
     }
 
-    virtual ~queue() = default;
+    ~queue() = default;
 
     bool empty() const
     {

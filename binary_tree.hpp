@@ -1,7 +1,6 @@
 /***
     二叉搜索树
         1. 使用智能指针自动管理内存
-        2. 使用虚析构函数，允许定义 binary_tree 的派生类
         3. 引入异常，对于不合法的操作会抛出异常
         4. 支持输入迭代器
 
@@ -244,7 +243,7 @@ public:
     }
 
     // call root_'s destructor, all nodes' memory will be free 
-    virtual ~binary_tree() = default;
+    ~binary_tree() = default;
     
     void swap( binary_tree &tree ) noexcept 
     {

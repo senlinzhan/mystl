@@ -214,7 +214,7 @@ public:
         swap( other );
     }
     
-    virtual ~unordered_set() = default;
+    ~unordered_set() = default;
     
     unordered_set &operator=( const unordered_set &other ) 
     {
