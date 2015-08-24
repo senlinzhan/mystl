@@ -24,6 +24,10 @@ My STL
 |数值算法|[numeric.hpp](https://github.com/senlinzhan/mystl/blob/master/numeric.hpp)|
 |通用算法|[algorithm.hpp](https://github.com/senlinzhan/mystl/blob/master/algorithm.hpp)|
 
+## 线程安全容器
+|   容器     |       文件         |
+|:-----------:|:-----------------:|
+|阻塞队列|[ThreadQueue.hpp](https://github.com/senlinzhan/mystl/blob/master/ThreadQueue.hpp)|
 
 ## 自定义容器与算法
 | 自定义容器 |       文件        |
