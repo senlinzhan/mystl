@@ -289,56 +289,37 @@ void merge_sort( T arr[], int size )
 }
 
 /**
-   Partition elements in array
-**/
-template <typename T>
-int partition( T arr[], int lo, int hi )
-{
-    using std::swap;
-    
-    T pivot = arr[hi];
-    
-    int left = lo;
-    int right = hi;    
-
-    while( true )
-    {
-        while( arr[left] < pivot )
-        {
-            ++left;
-        }
-        
-        while( right > lo && arr[--right] > pivot )
-        {
-        }
-        
-        if( left >= right )
-        {
-            break;
-        }
-
-        swap( arr[left], arr[right] );
-    }
-
-    swap( arr[left], arr[hi] );
-    
-    return left;
-}
-
-/**
    Quick sort base on array
  **/
 template <typename T>
-void quick_sort( T arr[], int lo, int hi )
+void quick_sort( T arr[], int low, int high )
 {
-    if( hi <= lo )
+    using std::swap;
+
+    if( low >= high )
     {
         return;
     }
 
-    int par = partition( arr, lo, hi );
-    quick_sort( arr, lo, par - 1 );
-    quick_sort( arr, par + 1, hi );
+    int i = low, j = high + 1;
+    T pivot = arr[low];
+    
+    while( true )
+    {
+        while( i < high && arr[++i] < pivot )
+            ;
+        while( arr[--j] > pivot )
+            ;
+        if( i >= j )
+        {
+            break;
+        }
+        swap( arr[i], arr[j] );
+    }
+    swap( arr[low], arr[j] );
+    
+    quick_sort( arr, low, j - 1 );
+    quick_sort( arr, j + 1, high );
 }
 
 /**
@@ -349,8 +330,6 @@ void quick_sort( T arr[], int size )
 {
     quick_sort( arr, 0, size - 1 );
 }
-
-
 
 };    // namespace mystl
 

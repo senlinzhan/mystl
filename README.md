@@ -38,9 +38,4 @@ My STL
 
 | 自定义算法 |       文件        |
 |:-------:|:-----------------:|
-|冒泡排序|[sort.hpp](https://github.com/senlinzhan/mystl/blob/master/sort.hpp)|
-|选择排序|[sort.hpp](https://github.com/senlinzhan/mystl/blob/master/sort.hpp)|
-|归并排序|[sort.hpp](https://github.com/senlinzhan/mystl/blob/master/sort.hpp)|
-|快速排序|[sort.hpp](https://github.com/senlinzhan/mystl/blob/master/sort.hpp)|
-|插入排序|[sort.hpp](https://github.com/senlinzhan/mystl/blob/master/sort.hpp)|
-
+|冒泡排序, 选择排序, 归并排序, 快速排序, 插入排序|[sort.hpp](https://github.com/senlinzhan/mystl/blob/master/sort.hpp)|
