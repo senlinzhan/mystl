@@ -34,7 +34,7 @@ My STL
 |:-------:|:-----------------:|
 |二叉搜索树|[binary_tree.hpp](https://github.com/senlinzhan/mystl/blob/master/binary_tree.hpp)|
 |AVL 树|[avl_tree.hpp](https://github.com/senlinzhan/mystl/blob/master/avl_tree.hpp)|
-
+|Trie 树|[trie_tree.hpp](https://github.com/senlinzhan/mystl/blob/master/trie_tree.hpp)|
 
 | 自定义算法 |       文件        |
 |:-------:|:-----------------:|
@@ -43,4 +43,5 @@ My STL
 |归并排序|[sort.hpp](https://github.com/senlinzhan/mystl/blob/master/sort.hpp)|
 |快速排序|[sort.hpp](https://github.com/senlinzhan/mystl/blob/master/sort.hpp)|
 |插入排序|[sort.hpp](https://github.com/senlinzhan/mystl/blob/master/sort.hpp)|
+|基数排序|[sort.hpp](https://github.com/senlinzhan/mystl/blob/master/sort.hpp)|
 
