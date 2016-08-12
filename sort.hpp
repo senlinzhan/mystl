@@ -207,7 +207,7 @@ void insertion_sort( BidirectionalIterator first, BidirectionalIterator last, Co
 template <typename BidirectionalIterator, typename = mystl::RequireBidirectionalIterator<BidirectionalIterator>>
 void insertion_sort( BidirectionalIterator first, BidirectionalIterator last )
 {
-    using value_type = typename mystl::iterator_traits<ForwardIterator>::value_type;
+    using value_type = typename mystl::iterator_traits<BidirectionalIterator>::value_type;
     insertion_sort( first, last, std::less<value_type>() );
 }
 
