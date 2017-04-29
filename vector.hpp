@@ -39,10 +39,13 @@ public:
     using const_reverse_iterator   = std::reverse_iterator<const T*>;
 
 private:
+    static constexpr size_type INIT_CAPACITY = 10; 
+    static constexpr size_type EXPAND_RATE   = 2;
+    
     pointer elem_ = nullptr;    // pointer to the first element in the allocated space
     pointer free_ = nullptr;    // pointer to the first free element in the allocated space
     pointer last_ = nullptr;    // pointer to one past the end of the allocated space
-    std::allocator<T> alloc_;
+    std::allocator<T> alloc_;   // allactor for allocate memory
 
 public:
     vector() noexcept = default;
@@ -113,9 +116,10 @@ public:
        removes all elements from the vector, leaving the container with a size of 0
        but we don't deallocate memory, vector's capacity doesn't change
     **/
-    void clear() 
+    void clear() noexcept
     {
-        erase(cbegin(), cend());
+        destruct_elements(elem_, free_);
+        free_ = elem_;
     }
 
     template<typename InputIterator, typename = mystl::RequireInputIterator<InputIterator>>
@@ -218,29 +222,25 @@ public:
         }
     }
 
-    /** 
-        push_back() is exception safe because if exception throw by value_type's copy constructor
-        all element will be destroy and all memory will free by vector's destructor
-    **/
     void push_back(const value_type &value) 
     {
-        auto copy = value;                 // value_type's copy constructor may throw 
-        push_back(std::move(copy));
+        check_expand_capacity();
+        alloc_.construct(free_, value);
+        ++free_;
     }
 
     void push_back(value_type &&value) 
     {
-        emplace_back(std::move(value));
+        check_expand_capacity();
+        new (free_) value_type(std::move(value));
+        ++free_;
     }
 
     template<typename... Args> 
     void emplace_back(Args&&... args) 
     {
-        if(free_ == last_) 
-        {
-            expand_double();
-        }
-        alloc_.construct(free_, std::forward<Args>( args )...);
+        check_expand_capacity();
+        alloc_.construct(free_, std::forward<Args>(args)...);
         ++free_;        
     }
 
@@ -351,7 +351,7 @@ public:
         // if we expand vector's size, then position will be invalid
         if(free_ == last_) 
         {
-            expand_double();
+            check_expand_capacity();
         }
         
         // Note: we can't use position now, because position may be invalid, we use pos instead
@@ -464,7 +464,7 @@ public:
             throw std::out_of_range("vector::erase() - parameter \"first\" or \"last\" is out of bound");            
         }
         auto iter = std::move(to_non_const(last), free_, to_non_const(first));
-        destroy_elements(iter, free_);
+        destruct_elements(iter, free_);
         
         free_ = iter;
         return to_non_const(first);
@@ -498,12 +498,16 @@ public:
     }
 
 private:
-    void expand_double() 
-    {
-        auto new_size = empty() ? 1 : size() * 2;
-        expand_to(new_size);
-    }
 
+    void check_expand_capacity()
+    {
+        if (free_ == last_)
+        {
+            size_type new_size = empty() ? INIT_CAPACITY : size() * EXPAND_RATE;
+            expand_to(new_size);            
+        }
+    }
+    
     void expand_to(size_type new_size) 
     {
         if(new_size <= size())
@@ -591,20 +595,21 @@ private:
         last_ = free_ = new_free;
     }
 
+    // destruct all elements and deallocate the memory
     void clear_elements() noexcept 
     {
         if(elem_) 
         {
-            destroy_elements(elem_, free_);
+            destruct_elements(elem_, free_);
             alloc_.deallocate(elem_, capacity());
             elem_ = free_ = last_ = nullptr;
         }
     }
     
     // destruct elements in allocated memory
-    void destroy_elements(iterator first, iterator last) noexcept 
+    void destruct_elements(iterator first, iterator last) noexcept 
     {
-        for (auto iter = first; iter != last; )
+        for (auto iter = first; iter != last; ++iter)
         {
             // assume value_type's destructor will not throw exception            
             alloc_.destroy(iter);
