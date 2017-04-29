@@ -17,28 +17,9 @@
 #include <string>
 #include <iostream>
 #include <exception>
-#include <initializer_list>        // for std::initializer_list<>
+#include <initializer_list> 
 
 namespace mystl { 
-
-
-class vector_exception : public std::exception
-{
-public:
-    explicit vector_exception( const std::string &message ) 
-        : message_( message )
-    { 
-    }
-    
-    virtual const char * what() const noexcept override 
-    {
-        return message_.c_str();
-    }
-    
-private:
-    std::string message_;
-};
-
 
 template <typename T, typename Alloc = std::allocator<T>>
 class vector
@@ -330,27 +311,20 @@ public:
         } 
         else 
         {
-            throw vector_exception( "vector::operator[]: the specify index is out of bound!" );
+            throw std::out_of_range("vector::at() - the specify index is out of bound");
         }        
     }
 
     const_reference at( size_type n ) const 
     {
-        if( n < size() ) 
-        {
-            return elem_[n];
-        } 
-        else 
-        {
-            throw vector_exception( "vector::operator[]: the specify index is out of bound!" );
-        }        
+        return const_cast<vector *>(this)->at();
     }
 
     reference front() 
     {
         if( !elem_ ) 
         {
-            throw vector_exception( "vector::front(): vector is empty!" );
+            throw std::length_error("vector::front() - the vector is empty");
         }
         return *begin();
     }
@@ -364,7 +338,7 @@ public:
     {
         if( !elem_ ) 
         {
-            throw vector_exception( "vector::back(): vector is empty!" );
+            throw std::length_error("vector::back() - the vector is empty");            
         }
         return *rbegin();        
     }
@@ -378,7 +352,7 @@ public:
     {
         if( !elem_ ) 
         {
-            throw vector_exception( "vector::pop_back(): vector is empty!" );
+            throw std::length_error("vector::pop_back() - the vector is empty"); 
         }
         alloc_.destroy( --free_ );
     }
@@ -388,7 +362,7 @@ public:
     {
         if( position < cbegin() || position > cend() ) 
         {
-            throw vector_exception( "vector::emplace(): the specify iterator is invalid" );
+            throw std::out_of_range("vector::emplace() - parameter \"position\" is out of bound");            
         }
         
         if( position == cend() ) 
@@ -493,7 +467,7 @@ public:
         // if iterator points to invalid range, then throw exception
         if( position < cbegin() || position >= cend() ) 
         {
-            throw vector_exception( "vector::erase(): the specify iterator is invalid" );
+            throw std::out_of_range("vector::erase() - parameter \"position\" is out of bound");                        
         }        
         auto pos = to_non_const( position );
         
@@ -511,7 +485,7 @@ public:
     {
         if( !( first >= cbegin() && last <= cend() ) ) 
         {
-            throw vector_exception( "vector::erase(): the specify range is invalid" );
+            throw std::out_of_range("vector::erase() - parameter \"first\" or \"last\" is out of bound");            
         }
         auto iter = std::move( to_non_const( last ), free_, to_non_const( first ) );
         destroy_elements( iter, free_ );
