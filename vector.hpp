@@ -57,54 +57,54 @@ public:
         create_elements(n, value);
     }
     
-    vector(const vector &other)
-    {
-        create_elements(other.cbegin(), other.cend());
-    }
-
-    vector(vector &&other) noexcept
-    {
-        swap(other);
-    }
-
     vector(std::initializer_list<value_type> values)
         : vector(values.begin(), values.end())
     {        
     }
     
     template<typename InputIterator, typename = mystl::RequireInputIterator<InputIterator>> 
-    vector( InputIterator first, InputIterator last)        
+    vector(InputIterator first, InputIterator last)        
     {
         create_elements(first, last);
     }
 
+    vector(const vector &other)
+    {
+        create_elements(other.cbegin(), other.cend());
+    }
+    
     /**
        can handle the problem of self-assignment, see C++ Primer 5th section 13.3
     **/
-    vector &operator=( const vector &other ) 
+    vector &operator=(const vector &other) 
     {
         auto copy = other;
         swap(copy);
         return *this;
     }
 
-    vector &operator=( vector &&other ) noexcept 
+    vector(vector &&other) noexcept
     {
-        // handle the problem of self--move-assignment
-        if( *this != other ) 
-        {              
+        swap(other);
+    }
+    
+    vector &operator=(vector &&other) noexcept 
+    {
+        // handle the problem of self-move-assignment        
+        if (this != &other)
+        {
             clear_elements();
             swap(other);
         }
         return *this;
     }
 
-    vector &operator=( std::initializer_list<value_type> lst ) 
+    vector &operator=(std::initializer_list<value_type> values) 
     {
-        assign(lst.begin(), lst.end());
+        assign(values.begin(), values.end());
     }
 
-    ~vector() 
+    ~vector() noexcept
     {
         clear_elements();
     }
@@ -119,18 +119,18 @@ public:
     }
 
     template<typename InputIterator, typename = mystl::RequireInputIterator<InputIterator>>
-    void assign( InputIterator first, InputIterator last ) 
+    void assign(InputIterator first, InputIterator last) 
     {     
         clear_elements();
         create_elements(first, last);
     }
 
-    void assign( std::initializer_list<value_type> lst ) 
+    void assign(std::initializer_list<value_type> lst) 
     {
         assign(lst.begin(), lst.end());
     }
 
-    void assign( size_type n, const value_type &value ) 
+    void assign(size_type n, const value_type &value) 
     {
         clear_elements();
         create_elements(n, value);
@@ -510,6 +510,7 @@ private:
         {
             return;
         }
+        
         auto new_elem = alloc_.allocate(new_size);
         auto new_free = new_elem;
         
@@ -543,19 +544,22 @@ private:
         last_ = new_elem + new_size;
     }
 
+    
     // Note: before call this function, you must sure that the container is empty!
     void create_elements(size_type n, const value_type &value) 
     {
         auto new_elem = alloc_.allocate(n);
+
         try 
         {
             std::uninitialized_fill(new_elem, new_elem + n, value);
         }
         catch(...)     // catch the exception throw by value_type's copy constructor
         {
-            alloc_.deallocate(new_elem, n);
+            alloc_.deallocate(new_elem, n);    // avoid memory leak
             throw;
         }
+        
         elem_ = new_elem;
         last_ = free_ = new_elem + n;
     }
@@ -568,40 +572,42 @@ private:
         {
             return;
         }
+
         auto n = std::distance(first, last);
         auto new_elem = alloc_.allocate(n);
-        auto new_free = new_elem;
-        
+
+        pointer new_free;
         try 
         {
             new_free = std::uninitialized_copy(first, last, new_elem);
         }
         catch(...)     // catch the exception throw by value_type's copy constructor
         {
-            alloc_.deallocate(new_elem, n);
+            alloc_.deallocate(new_elem, n);    // avoid memory leak
             throw;
         }
+        
         elem_ = new_elem;
         last_ = free_ = new_free;
     }
 
-    // assume value_type's destructor always can't throw exception
     void clear_elements() noexcept 
     {
         if(elem_) 
         {
             destroy_elements(elem_, free_);
-            alloc_.deallocate(elem_, last_ - elem_);
+            alloc_.deallocate(elem_, capacity());
             elem_ = free_ = last_ = nullptr;
         }
     }
-
+    
+    // destruct elements in allocated memory
     void destroy_elements(iterator first, iterator last) noexcept 
     {
-        auto iter = last;
-        while(iter != first) 
+        for (auto iter = first; iter != last; )
         {
-            alloc_.destroy(--iter); 
+            // assume value_type's destructor will not throw exception            
+            alloc_.destroy(iter);
         }
     }
 
