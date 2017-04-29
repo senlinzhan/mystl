@@ -39,7 +39,7 @@ public:
     using const_reverse_iterator   = std::reverse_iterator<const T*>;
 
 private:
-    static constexpr size_type INIT_CAPACITY = 10; 
+    static constexpr size_type FIRST_EXPAND_CAPACITY = 10;
     static constexpr size_type EXPAND_RATE   = 2;
     
     pointer elem_ = nullptr;    // pointer to the first element in the allocated space
@@ -212,11 +212,11 @@ public:
 
     void resize(size_type new_size, const value_type &value) 
     {
-        if(new_size < size()) 
+        if (new_size < size()) 
         {
             erase(begin() + new_size, end());
         }
-        else if(new_size > size()) 
+        else if (new_size > size()) 
         {
             insert(end(), size() - new_size, value);
         }
@@ -225,14 +225,13 @@ public:
     void push_back(const value_type &value) 
     {
         check_expand_capacity();
-        alloc_.construct(free_, value);
-        ++free_;
+        alloc_.construct(free_++, value);
     }
 
     void push_back(value_type &&value) 
     {
         check_expand_capacity();
-        new (free_) value_type(std::move(value));
+        new (free_) value_type(std::move(value)); // placement new
         ++free_;
     }
 
@@ -240,8 +239,7 @@ public:
     void emplace_back(Args&&... args) 
     {
         check_expand_capacity();
-        alloc_.construct(free_, std::forward<Args>(args)...);
-        ++free_;        
+        alloc_.construct(free_++, std::forward<Args>(args)...);
     }
 
     void shrink_to_fit() 
@@ -262,20 +260,21 @@ public:
 
     void reserve(size_type n) 
     {
-        if(n > capacity()) 
-        {
-            expand_to(n);
-        }
+        expand_capacity(n);
     }
 
     reference operator[](size_type n) 
     {
-        return at(n);
+        if (n < size())
+        {
+            return elem_[n];
+        }
+        throw std::out_of_range("vector::operator[] - the specify index is out of bound");        
     }
 
     const_reference operator[](size_type n) const 
     {
-        return at(n);
+        return const_cast<vector *>(this)->operator[](n);
     }
 
     reference at(size_type n) 
@@ -284,10 +283,7 @@ public:
         {
             return elem_[n];
         } 
-        else 
-        {
-            throw std::out_of_range("vector::at() - the specify index is out of bound");
-        }        
+        throw std::out_of_range("vector::at() - the specify index is out of bound");
     }
 
     const_reference at(size_type n) const 
@@ -297,11 +293,11 @@ public:
 
     reference front() 
     {
-        if(!elem_) 
+        if (elem_)
         {
-            throw std::length_error("vector::front() - the vector is empty");
+            return *begin();
         }
-        return *begin();
+        throw std::length_error("vector::front() - the vector is empty");
     }
 
     const_reference front() const 
@@ -311,11 +307,11 @@ public:
 
     reference back() 
     {
-        if(!elem_) 
+        if(elem_) 
         {
-            throw std::length_error("vector::back() - the vector is empty");            
+            return *rbegin();           
         }
-        return *rbegin();        
+        throw std::length_error("vector::back() - the vector is empty");            
     }
       
     const_reference back() const noexcept 
@@ -325,11 +321,11 @@ public:
 
     void pop_back() 
     {
-        if(!elem_) 
+        if (!empty())
         {
-            throw std::length_error("vector::pop_back() - the vector is empty"); 
+            alloc_.destroy(--free_);                        
         }
-        alloc_.destroy(--free_);
+        throw std::length_error("vector::pop_back() - the vector is empty"); 
     }
 
     template<typename... Args>
@@ -339,36 +335,30 @@ public:
         {
             throw std::out_of_range("vector::emplace() - parameter \"position\" is out of bound");            
         }
+
+        // if we expand vector's size, then position will be invalid        
+        difference_type diff = position - cbegin();
+        check_expand_capacity();
         
-        if(position == cend()) 
+        // we use pos instead of position
+        auto pos = elem_ + diff;
+
+        if (pos == cend())
         {
-            emplace_back(std::forward<Args>(args)...);
+            alloc_.construct(free_++, std::forward<Args>(args)...);
             return free_ - 1;
         }
-        
-        difference_type diff = position - cbegin();
 
-        // if we expand vector's size, then position will be invalid
-        if(free_ == last_) 
-        {
-            check_expand_capacity();
-        }
-        
-        // Note: we can't use position now, because position may be invalid, we use pos instead
-        auto pos = elem_ + diff;
-        
-        // we construct a new element as the last element
-        alloc_.construct(free_, *(free_ - 1));
+        // move construct a new element
+        new (free_) value_type(std::move(*(free_ - 1))); 
         ++free_;
-
-        // move elements
-        for(auto iter = free_ - 2; iter != pos; --iter) 
+        
+        for (auto iter = free_ - 2; iter != pos; --iter)
         {
             *iter = std::move(*(iter - 1));
         }
-        
         *pos = value_type(std::forward<Args>(args)...);
-
+        
         return pos;
     }
     
@@ -498,24 +488,23 @@ public:
     }
 
 private:
-
     void check_expand_capacity()
     {
         if (free_ == last_)
         {
-            size_type new_size = empty() ? INIT_CAPACITY : size() * EXPAND_RATE;
-            expand_to(new_size);            
+            size_type new_capacity = empty() ? FIRST_EXPAND_CAPACITY : size() * EXPAND_RATE;
+            expand_capacity(new_capacity);
         }
     }
     
-    void expand_to(size_type new_size) 
+    void expand_capacity(size_type new_capacity) 
     {
-        if(new_size <= size())
+        if (new_capacity <= capacity())
         {
             return;
         }
-        
-        auto new_elem = alloc_.allocate(new_size);
+
+        auto new_elem = alloc_.allocate(new_capacity);
         auto new_free = new_elem;
         
         // if value_type's move constructor is noexcept, then move elements
@@ -524,7 +513,8 @@ private:
         {
             for(auto iter = elem_; iter != free_; ++iter) 
             {
-                alloc_.construct(new_free++, std::move( *iter ));
+                new (new_free) value_type(std::move(*iter)); // placement new
+                ++new_free;
             }
         } 
         else 
@@ -533,9 +523,9 @@ private:
             {
                 new_free = std::uninitialized_copy(elem_, free_, new_elem);
             }
-            catch(...)        // catch the exception throw by value_type's copy constructor
+            catch(...)    // catch the exception throw by value_type's copy constructor
             {    
-                alloc_.deallocate(new_elem, new_size);
+                alloc_.deallocate(new_elem, new_capacity);
                 throw;
             }
         }
@@ -545,10 +535,9 @@ private:
         
         elem_ = new_elem;
         free_ = new_free;
-        last_ = new_elem + new_size;
+        last_ = new_elem + new_capacity;
     }
 
-    
     // Note: before call this function, you must sure that the container is empty!
     void create_elements(size_type n, const value_type &value) 
     {
